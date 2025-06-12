@@ -1,6 +1,6 @@
 <?php
 
-namespace WechatBotBundle\DependencyInjection;
+namespace Tourze\WechatBotBundle\DependencyInjection;
 
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

@@ -26,12 +26,12 @@
   },
   "autoload": {
     "psr-4": {
-      "WechatBotBundle\\": "src"
+      "Tourze\\WechatBotBundle\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "WechatBotBundle\\Tests\\": "tests"
+      "Tourze\\WechatBotBundle\\Tests\\": "tests"
     }
   }
 }

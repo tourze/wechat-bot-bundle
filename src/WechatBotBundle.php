@@ -1,6 +1,6 @@
 <?php
 
-namespace WechatBotBundle;
+namespace Tourze\WechatBotBundle;
 
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
