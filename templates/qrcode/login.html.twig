@@ -1,0 +1,340 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}微信登录二维码 - {{ account.deviceId }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .qrcode-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .qrcode-image {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+            max-width: 300px;
+            width: 100%;
+        }
+        .status-indicator {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .status-online {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-offline {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-expired {
+            background-color: #f0f0f0;
+            color: #6c757d;
+        }
+        .account-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .btn-group {
+            margin: 20px 0;
+        }
+        .btn-group .btn {
+            margin: 0 5px;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="qrcode-container">
+        <h1>微信登录二维码</h1>
+        
+        <!-- 账号信息 -->
+        <div class="account-info">
+            <h5>设备信息</h5>
+            <p><strong>设备ID:</strong> {{ account.deviceId }}</p>
+            {% if account.wechatId %}
+                <p><strong>微信号:</strong> {{ account.wechatId }}</p>
+                <p><strong>昵称:</strong> {{ account.nickname ?? '未知' }}</p>
+            {% endif %}
+        </div>
+        
+        <!-- 状态指示器 -->
+        <div id="status-indicator" class="status-indicator status-{{ status }}">
+            <span id="status-text">{{ status_message }}</span>
+        </div>
+        
+        <!-- 二维码显示区域 -->
+        <div id="qrcode-section">
+            {% if qrCodeUrl %}
+                <div>
+                    <img id="qrcode-image" src="{{ qrCodeUrl }}" alt="微信登录二维码" class="qrcode-image">
+                    <p>使用微信扫描二维码登录</p>
+                </div>
+            {% else %}
+                <div id="no-qrcode">
+                    <p>暂无二维码，请点击生成二维码</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="btn-group">
+            <button id="btn-generate" class="btn btn-primary">生成二维码</button>
+            <button id="btn-refresh" class="btn btn-secondary">刷新状态</button>
+            <button id="btn-confirm" class="btn btn-success" style="display: none;">确认登录</button>
+            <button id="btn-logout" class="btn btn-danger" style="display: none;">退出登录</button>
+        </div>
+        
+        <!-- 省市设置 -->
+        <div class="form-group mt-3">
+            <label for="province">省份:</label>
+            <select id="province" class="form-control">
+                <option value="广东">广东</option>
+                <option value="北京">北京</option>
+                <option value="上海">上海</option>
+                <option value="江苏">江苏</option>
+                <option value="浙江">浙江</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="city">城市:</label>
+            <input type="text" id="city" class="form-control" value="深圳" placeholder="输入城市名称">
+        </div>
+        <div class="form-group">
+            <label for="proxy">代理设置:</label>
+            <input type="text" id="proxy" class="form-control" placeholder="host:port (可选)">
+        </div>
+        
+        <!-- 日志区域 -->
+        <div class="mt-4">
+            <h6>操作日志</h6>
+            <div id="log-area" style="height: 200px; overflow-y: scroll; background: #f8f9fa; padding: 10px; border-radius: 4px; text-align: left;">
+                <!-- 日志会动态添加到这里 -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        const accountId = {{ account.id }};
+        let statusCheckInterval = null;
+        
+        // DOM 元素
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const qrCodeImage = document.getElementById('qrcode-image');
+        const qrCodeSection = document.getElementById('qrcode-section');
+        const logArea = document.getElementById('log-area');
+        
+        // 按钮元素
+        const btnGenerate = document.getElementById('btn-generate');
+        const btnRefresh = document.getElementById('btn-refresh');
+        const btnConfirm = document.getElementById('btn-confirm');
+        const btnLogout = document.getElementById('btn-logout');
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleString();
+            const logClass = type === 'error' ? 'text-danger' : (type === 'success' ? 'text-success' : 'text-info');
+            logArea.innerHTML += `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        // 更新状态显示
+        function updateStatusDisplay(status, message) {
+            statusIndicator.className = `status-indicator status-${status}`;
+            statusText.textContent = message;
+            
+            // 根据状态显示不同按钮
+            btnConfirm.style.display = status === 'pending_login' ? 'inline-block' : 'none';
+            btnLogout.style.display = status === 'online' ? 'inline-block' : 'none';
+        }
+        
+        // 生成二维码
+        async function generateQrCode() {
+            try {
+                btnGenerate.disabled = true;
+                btnGenerate.textContent = '生成中...';
+                addLog('正在生成二维码...');
+                
+                const formData = new FormData();
+                formData.append('province', document.getElementById('province').value);
+                formData.append('city', document.getElementById('city').value);
+                const proxy = document.getElementById('proxy').value;
+                if (proxy) {
+                    formData.append('proxy', proxy);
+                }
+                
+                const response = await fetch(`/wechat-bot/qrcode/generate/${accountId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 更新二维码显示
+                    qrCodeSection.innerHTML = `
+                        <div>
+                            <img id="qrcode-image" src="${result.qrCodeUrl}" alt="微信登录二维码" class="qrcode-image">
+                            <p>使用微信扫描二维码登录</p>
+                        </div>
+                    `;
+                    
+                    updateStatusDisplay('pending_login', '等待扫码登录');
+                    addLog('二维码生成成功', 'success');
+                    
+                    // 开始定时检查状态
+                    startStatusCheck();
+                } else {
+                    addLog(`生成二维码失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`生成二维码失败: ${error.message}`, 'error');
+            } finally {
+                btnGenerate.disabled = false;
+                btnGenerate.textContent = '生成二维码';
+            }
+        }
+        
+        // 检查登录状态
+        async function checkStatus() {
+            try {
+                const response = await fetch(`/wechat-bot/qrcode/status/${accountId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateStatusDisplay(result.status, result.message);
+                    
+                    if (result.status === 'online') {
+                        addLog(`登录成功! 微信号: ${result.wechatId}, 昵称: ${result.nickname}`, 'success');
+                        stopStatusCheck();
+                    }
+                } else {
+                    addLog(`状态检查失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`状态检查失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 确认登录
+        async function confirmLogin() {
+            try {
+                btnConfirm.disabled = true;
+                btnConfirm.textContent = '确认中...';
+                addLog('正在确认登录...');
+                
+                const response = await fetch(`/wechat-bot/qrcode/confirm/${accountId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('登录确认成功', 'success');
+                    checkStatus(); // 立即检查状态
+                } else {
+                    addLog(`登录确认失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`登录确认失败: ${error.message}`, 'error');
+            } finally {
+                btnConfirm.disabled = false;
+                btnConfirm.textContent = '确认登录';
+            }
+        }
+        
+        // 退出登录
+        async function logout() {
+            if (!confirm('确定要退出登录吗？')) {
+                return;
+            }
+            
+            try {
+                btnLogout.disabled = true;
+                btnLogout.textContent = '退出中...';
+                addLog('正在退出登录...');
+                
+                const response = await fetch(`/wechat-bot/qrcode/logout/${accountId}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addLog('退出登录成功', 'success');
+                    updateStatusDisplay('offline', '已退出登录');
+                    stopStatusCheck();
+                } else {
+                    addLog(`退出登录失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addLog(`退出登录失败: ${error.message}`, 'error');
+            } finally {
+                btnLogout.disabled = false;
+                btnLogout.textContent = '退出登录';
+            }
+        }
+        
+        // 开始状态检查
+        function startStatusCheck() {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+            statusCheckInterval = setInterval(checkStatus, 3000); // 每3秒检查一次
+        }
+        
+        // 停止状态检查
+        function stopStatusCheck() {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+        }
+        
+        // 事件监听
+        btnGenerate.addEventListener('click', generateQrCode);
+        btnRefresh.addEventListener('click', checkStatus);
+        btnConfirm.addEventListener('click', confirmLogin);
+        btnLogout.addEventListener('click', logout);
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('页面加载完成');
+            
+            // 根据当前状态决定是否开始状态检查
+            const currentStatus = '{{ status }}';
+            if (currentStatus === 'pending_login') {
+                startStatusCheck();
+            }
+            
+            // 初始化状态显示
+            updateStatusDisplay(currentStatus, statusText.textContent);
+        });
+        
+        // 页面离开时清理定时器
+        window.addEventListener('beforeunload', function() {
+            stopStatusCheck();
+        });
+    </script>
+{% endblock %} 
