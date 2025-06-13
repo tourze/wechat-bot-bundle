@@ -104,46 +104,6 @@ class WeChatAccountService
     }
 
     /**
-     * 设置设备代理
-     */
-    public function setDeviceProxy(WeChatApiAccount $apiAccount, string $deviceId, string $proxy): bool
-    {
-        try {
-            // 解析代理格式：host:port:username:password
-            $proxyParts = explode(':', $proxy);
-            if (count($proxyParts) < 2) {
-                throw new \InvalidArgumentException('Invalid proxy format, expected: host:port[:username:password]');
-            }
-
-            $proxyIp = $proxyParts[0] . ':' . $proxyParts[1];
-            $proxyRequest = new SetDeviceProxyRequest(
-                $apiAccount,
-                $deviceId,
-                $proxyIp,
-                $proxyParts[2] ?? null,
-                $proxyParts[3] ?? null
-            );
-
-            $response = $this->apiClient->request($proxyRequest);
-
-            $this->logger->info('Device proxy set', [
-                'deviceId' => $deviceId,
-                'proxyIp' => $proxyIp
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to set device proxy', [
-                'deviceId' => $deviceId,
-                'proxy' => $proxy,
-                'error' => $e->getMessage()
-            ]);
-
-            return false;
-        }
-    }
-
-    /**
      * 创建新的微信设备并开始登录流程
      */
     public function createDeviceAndStartLogin(
@@ -218,16 +178,6 @@ class WeChatAccountService
     }
 
     /**
-     * 生成唯一设备ID
-     */
-    private function generateDeviceId(): string
-    {
-        $timestamp = time();
-        $random = random_int(1000, 9999);
-        return sprintf('device_%d_%d', $timestamp, $random);
-    }
-
-    /**
      * 确认登录状态
      */
     public function confirmLogin(WeChatAccount $account): WeChatLoginResult
@@ -276,27 +226,50 @@ class WeChatAccountService
     }
 
     /**
-     * 从登录响应更新账号信息
+     * 检查在线状态
      */
-    private function updateAccountFromLoginResponse(WeChatAccount $account, array $data): void
+    public function checkOnlineStatus(WeChatAccount $account): WeChatDeviceStatus
     {
-        if (isset($data['wxId'])) {
-            $account->setWechatId($data['wxId']);
+        try {
+            $statusRequest = new CheckOnlineStatusRequest($account->getApiAccount(), $account->getDeviceId());
+            $response = $this->apiClient->request($statusRequest);
+
+            $isOnline = isset($response['data']['online']) && $response['data']['online'] === true;
+            $status = $isOnline ? 'online' : 'offline';
+
+            // 更新账号状态
+            if ($account->getStatus() !== $status) {
+                $account->setStatus($status);
+                if ($isOnline) {
+                    $account->updateLastActiveTime();
+                }
+                $this->entityManager->flush();
+            }
+
+            return new WeChatDeviceStatus(
+                deviceId: $account->getDeviceId(),
+                isOnline: $isOnline,
+                status: $status,
+                lastActiveTime: $account->getLastActiveTime()
+            );
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to check online status', [
+                'accountId' => $account->getId(),
+                'error' => $e->getMessage()
+            ]);
+
+            // 检查失败时标记为离线
+            $account->markAsOffline();
+            $this->entityManager->flush();
+
+            return new WeChatDeviceStatus(
+                deviceId: $account->getDeviceId(),
+                isOnline: false,
+                status: 'offline',
+                lastActiveTime: $account->getLastActiveTime(),
+                error: $e->getMessage()
+            );
         }
-
-        if (isset($data['nickname'])) {
-            $account->setNickname($data['nickname']);
-        }
-
-        if (isset($data['avatar'])) {
-            $account->setAvatar($data['avatar']);
-        }
-
-        $account->markAsOnline()
-            ->setLastLoginTime(new \DateTime())
-            ->updateLastActiveTime();
-
-        $this->entityManager->flush();
     }
 
     /**
@@ -354,6 +327,46 @@ class WeChatAccountService
     }
 
     /**
+     * 设置设备代理
+     */
+    public function setDeviceProxy(WeChatApiAccount $apiAccount, string $deviceId, string $proxy): bool
+    {
+        try {
+            // 解析代理格式：host:port:username:password
+            $proxyParts = explode(':', $proxy);
+            if (count($proxyParts) < 2) {
+                throw new \InvalidArgumentException('Invalid proxy format, expected: host:port[:username:password]');
+            }
+
+            $proxyIp = $proxyParts[0] . ':' . $proxyParts[1];
+            $proxyRequest = new SetDeviceProxyRequest(
+                $apiAccount,
+                $deviceId,
+                $proxyIp,
+                $proxyParts[2] ?? null,
+                $proxyParts[3] ?? null
+            );
+
+            $response = $this->apiClient->request($proxyRequest);
+
+            $this->logger->info('Device proxy set', [
+                'deviceId' => $deviceId,
+                'proxyIp' => $proxyIp
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to set device proxy', [
+                'deviceId' => $deviceId,
+                'proxy' => $proxy,
+                'error' => $e->getMessage()
+            ]);
+
+            return false;
+        }
+    }
+
+    /**
      * 批量检查所有账号的在线状态
      */
     public function checkAllAccountsStatus(): array
@@ -366,53 +379,6 @@ class WeChatAccountService
         }
 
         return $results;
-    }
-
-    /**
-     * 检查在线状态
-     */
-    public function checkOnlineStatus(WeChatAccount $account): WeChatDeviceStatus
-    {
-        try {
-            $statusRequest = new CheckOnlineStatusRequest($account->getApiAccount(), $account->getDeviceId());
-            $response = $this->apiClient->request($statusRequest);
-
-            $isOnline = isset($response['data']['online']) && $response['data']['online'] === true;
-            $status = $isOnline ? 'online' : 'offline';
-
-            // 更新账号状态
-            if ($account->getStatus() !== $status) {
-                $account->setStatus($status);
-                if ($isOnline) {
-                    $account->updateLastActiveTime();
-                }
-                $this->entityManager->flush();
-            }
-
-            return new WeChatDeviceStatus(
-                deviceId: $account->getDeviceId(),
-                isOnline: $isOnline,
-                status: $status,
-                lastActiveTime: $account->getLastActiveTime()
-            );
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to check online status', [
-                'accountId' => $account->getId(),
-                'error' => $e->getMessage()
-            ]);
-
-            // 检查失败时标记为离线
-            $account->markAsOffline();
-            $this->entityManager->flush();
-
-            return new WeChatDeviceStatus(
-                deviceId: $account->getDeviceId(),
-                isOnline: false,
-                status: 'offline',
-                lastActiveTime: $account->getLastActiveTime(),
-                error: $e->getMessage()
-            );
-        }
     }
 
     /**
@@ -429,6 +395,40 @@ class WeChatAccountService
             'pending_login' => $statusCounts['pending_login'] ?? 0,
             'expired' => $statusCounts['expired'] ?? 0,
         ];
+    }
+
+    /**
+     * 生成唯一设备ID
+     */
+    private function generateDeviceId(): string
+    {
+        $timestamp = time();
+        $random = random_int(1000, 9999);
+        return sprintf('device_%d_%d', $timestamp, $random);
+    }
+
+    /**
+     * 从登录响应更新账号信息
+     */
+    private function updateAccountFromLoginResponse(WeChatAccount $account, array $data): void
+    {
+        if (isset($data['wxId'])) {
+            $account->setWechatId($data['wxId']);
+        }
+
+        if (isset($data['nickname'])) {
+            $account->setNickname($data['nickname']);
+        }
+
+        if (isset($data['avatar'])) {
+            $account->setAvatar($data['avatar']);
+        }
+
+        $account->markAsOnline()
+            ->setLastLoginTime(new \DateTime())
+            ->updateLastActiveTime();
+
+        $this->entityManager->flush();
     }
 
     public function __toString(): string

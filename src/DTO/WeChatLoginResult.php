@@ -38,6 +38,11 @@ readonly class WeChatLoginResult implements \Stringable
         return $this->qrCodeUrl !== null;
     }
 
+    public function hasAccount(): bool
+    {
+        return $this->account !== null;
+    }
+
     public function __toString(): string
     {
         return sprintf(
@@ -46,10 +51,5 @@ readonly class WeChatLoginResult implements \Stringable
             $this->message,
             $this->hasAccount() ? 'true' : 'false'
         );
-    }
-
-    public function hasAccount(): bool
-    {
-        return $this->account !== null;
     }
 }

@@ -203,53 +203,6 @@ class WeChatMessageCrudController extends AbstractCrudController
             ->hideOnIndex();
     }
 
-    /**
-     * 格式化消息类型显示
-     */
-    private function formatMessageType(?string $type): string
-    {
-        return match ($type) {
-            'text' => '📝 文本',
-            'image' => '🖼️ 图片',
-            'voice' => '🎤 语音',
-            'video' => '🎬 视频',
-            'file' => '📁 文件',
-            'link' => '🔗 链接',
-            'emoji' => '😊 表情',
-            'card' => '👤 名片',
-            'mini_program' => '📱 小程序',
-            'xml' => '📋 XML',
-            default => '❓ 未知'
-        };
-    }
-
-    /**
-     * 格式化消息方向显示
-     */
-    private function formatDirection(?string $direction): string
-    {
-        return match ($direction) {
-            'inbound' => '⬇️ 接收',
-            'outbound' => '⬆️ 发送',
-            default => '❓ 未知'
-        };
-    }
-
-    /**
-     * 格式化文件大小
-     */
-    private function formatFileSize(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-
-        $bytes /= pow(1024, $pow);
-
-        return round($bytes, 2) . ' ' . $units[$pow];
-    }
-
     public function configureActions(Actions $actions): Actions
     {
         // 添加详情操作
@@ -318,5 +271,52 @@ class WeChatMessageCrudController extends AbstractCrudController
             ->leftJoin('entity.account', 'account')
             ->addSelect('account')
             ->orderBy('entity.messageTime', 'DESC');
+    }
+
+    /**
+     * 格式化消息类型显示
+     */
+    private function formatMessageType(?string $type): string
+    {
+        return match ($type) {
+            'text' => '📝 文本',
+            'image' => '🖼️ 图片',
+            'voice' => '🎤 语音',
+            'video' => '🎬 视频',
+            'file' => '📁 文件',
+            'link' => '🔗 链接',
+            'emoji' => '😊 表情',
+            'card' => '👤 名片',
+            'mini_program' => '📱 小程序',
+            'xml' => '📋 XML',
+            default => '❓ 未知'
+        };
+    }
+
+    /**
+     * 格式化消息方向显示
+     */
+    private function formatDirection(?string $direction): string
+    {
+        return match ($direction) {
+            'inbound' => '⬇️ 接收',
+            'outbound' => '⬆️ 发送',
+            default => '❓ 未知'
+        };
+    }
+
+    /**
+     * 格式化文件大小
+     */
+    private function formatFileSize(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+
+        $bytes /= pow(1024, $pow);
+
+        return round($bytes, 2) . ' ' . $units[$pow];
     }
 }

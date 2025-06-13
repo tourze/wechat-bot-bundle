@@ -50,20 +50,6 @@ class QrCodeController extends AbstractController
     }
 
     /**
-     * 获取状态消息
-     */
-    private function getStatusMessage(string $status): string
-    {
-        return match ($status) {
-            'pending_login' => '等待扫码登录',
-            'online' => '已登录，设备在线',
-            'offline' => '设备离线',
-            'expired' => '登录已过期，需要重新登录',
-            default => '状态未知'
-        };
-    }
-
-    /**
      * 生成新的登录二维码
      */
     #[Route('/generate/{id}', name: 'generate', methods: ['POST'])]
@@ -209,5 +195,19 @@ class QrCodeController extends AbstractController
                 'message' => '退出登录失败：' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * 获取状态消息
+     */
+    private function getStatusMessage(string $status): string
+    {
+        return match ($status) {
+            'pending_login' => '等待扫码登录',
+            'online' => '已登录，设备在线',
+            'offline' => '设备离线',
+            'expired' => '登录已过期，需要重新登录',
+            default => '状态未知'
+        };
     }
 }

@@ -159,31 +159,6 @@ class WeChatAccountCrudController extends AbstractCrudController
             ->hideOnIndex();
     }
 
-    /**
-     * 格式化状态显示
-     */
-    private function formatStatus(?string $status): string
-    {
-        return match ($status) {
-            'pending_login' => '⏳ 等待登录',
-            'online' => '🟢 在线',
-            'offline' => '🔴 离线',
-            'expired' => '⚠️ 已过期',
-            default => '❓ 未知'
-        };
-    }
-
-    /**
-     * 获取状态CSS类
-     */
-    private function getStatusCssClass(string $pageName): string
-    {
-        if ($pageName === Crud::PAGE_INDEX) {
-            return 'badge';
-        }
-        return '';
-    }
-
     public function configureActions(Actions $actions): Actions
     {
         // 添加详情操作
@@ -234,5 +209,30 @@ class WeChatAccountCrudController extends AbstractCrudController
             ->leftJoin('entity.apiAccount', 'apiAccount')
             ->addSelect('apiAccount')
             ->orderBy('entity.id', 'DESC');
+    }
+
+    /**
+     * 格式化状态显示
+     */
+    private function formatStatus(?string $status): string
+    {
+        return match ($status) {
+            'pending_login' => '⏳ 等待登录',
+            'online' => '🟢 在线',
+            'offline' => '🔴 离线',
+            'expired' => '⚠️ 已过期',
+            default => '❓ 未知'
+        };
+    }
+
+    /**
+     * 获取状态CSS类
+     */
+    private function getStatusCssClass(string $pageName): string
+    {
+        if ($pageName === Crud::PAGE_INDEX) {
+            return 'badge';
+        }
+        return '';
     }
 }

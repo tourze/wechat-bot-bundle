@@ -42,6 +42,11 @@ readonly class WeChatMessageSendResult implements \Stringable
         return $this->errorMessage !== null;
     }
 
+    public function getMessageId(): ?int
+    {
+        return $this->message?->getId();
+    }
+
     public function __toString(): string
     {
         return sprintf(
@@ -50,10 +55,5 @@ readonly class WeChatMessageSendResult implements \Stringable
             $this->getMessageId() ?? 'null',
             $this->errorMessage ?? 'none'
         );
-    }
-
-    public function getMessageId(): ?int
-    {
-        return $this->message?->getId();
     }
 }

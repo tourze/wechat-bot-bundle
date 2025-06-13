@@ -79,28 +79,6 @@ class WeChatCallbackHandler
     }
 
     /**
-     * 验证回调数据
-     */
-    private function validateCallbackData(array $data): bool
-    {
-        // 基本字段验证
-        if (!isset($data['deviceId'])) {
-            return false;
-        }
-
-        // 根据回调类型进行不同的验证
-        $type = $data['type'] ?? 'message';
-
-        return match ($type) {
-            'message' => isset($data['fromUser']) || isset($data['toUser']),
-            'login', 'status' => true,
-            'friend_request' => isset($data['fromUser']),
-            'group_invite' => isset($data['groupId']),
-            default => true
-        };
-    }
-
-    /**
      * 处理回调数据
      */
     private function processCallback(array $data): bool
@@ -162,60 +140,6 @@ class WeChatCallbackHandler
     }
 
     /**
-     * 触发自动回复逻辑
-     */
-    private function triggerAutoReply(WeChatMessage $message, array $originalData): void
-    {
-        try {
-            // 只对接收到的文本消息进行自动回复
-            if (!$message->isInbound() || !$message->isTextMessage()) {
-                return;
-            }
-
-            $content = $message->getContent();
-            if (!$content) {
-                return;
-            }
-
-            // 简单的自动回复逻辑示例
-            $autoReply = $this->generateAutoReply($content);
-            if (!$autoReply) {
-                return;
-            }
-
-            // 发送自动回复
-            $account = $message->getAccount();
-            $targetWxId = $message->getSenderId();
-
-            if ($targetWxId) {
-                $this->messageService->sendTextMessage($account, $targetWxId, $autoReply);
-                $message->markAsReplied();
-            }
-        } catch (\Exception $e) {
-            $this->logger->error('Failed to trigger auto reply', [
-                'messageId' => $message->getId(),
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    /**
-     * 生成自动回复内容
-     */
-    private function generateAutoReply(string $content): ?string
-    {
-        $content = trim(strtolower($content));
-
-        // 简单的关键词匹配自动回复
-        return match (true) {
-            str_contains($content, 'hello') || str_contains($content, '你好') => '你好！很高兴收到您的消息。',
-            str_contains($content, 'help') || str_contains($content, '帮助') => '如需帮助，请联系我们的客服人员。',
-            str_contains($content, 'time') || str_contains($content, '时间') => '当前时间：' . date('Y-m-d H:i:s'),
-            default => null
-        };
-    }
-
-    /**
      * 处理登录回调
      */
     private function processLoginCallback(array $data): bool
@@ -271,16 +195,6 @@ class WeChatCallbackHandler
 
             return false;
         }
-    }
-
-    /**
-     * 根据设备ID查找账号
-     */
-    private function findAccountByDeviceId(string $deviceId): ?\Tourze\WechatBotBundle\Entity\WeChatAccount
-    {
-        // 这里应该使用Repository，但为了简化先直接返回null
-        // 实际使用时需要注入AccountRepository
-        return null;
     }
 
     /**
@@ -394,6 +308,92 @@ class WeChatCallbackHandler
         ]);
 
         return true; // 返回true避免重复回调
+    }
+
+    /**
+     * 触发自动回复逻辑
+     */
+    private function triggerAutoReply(WeChatMessage $message, array $originalData): void
+    {
+        try {
+            // 只对接收到的文本消息进行自动回复
+            if (!$message->isInbound() || !$message->isTextMessage()) {
+                return;
+            }
+
+            $content = $message->getContent();
+            if (!$content) {
+                return;
+            }
+
+            // 简单的自动回复逻辑示例
+            $autoReply = $this->generateAutoReply($content);
+            if (!$autoReply) {
+                return;
+            }
+
+            // 发送自动回复
+            $account = $message->getAccount();
+            $targetWxId = $message->getSenderId();
+
+            if ($targetWxId) {
+                $this->messageService->sendTextMessage($account, $targetWxId, $autoReply);
+                $message->markAsReplied();
+            }
+        } catch (\Exception $e) {
+            $this->logger->error('Failed to trigger auto reply', [
+                'messageId' => $message->getId(),
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 生成自动回复内容
+     */
+    private function generateAutoReply(string $content): ?string
+    {
+        $content = trim(strtolower($content));
+
+        // 简单的关键词匹配自动回复
+        return match (true) {
+            str_contains($content, 'hello') || str_contains($content, '你好') => '你好！很高兴收到您的消息。',
+            str_contains($content, 'help') || str_contains($content, '帮助') => '如需帮助，请联系我们的客服人员。',
+            str_contains($content, 'time') || str_contains($content, '时间') => '当前时间：' . date('Y-m-d H:i:s'),
+            default => null
+        };
+    }
+
+    /**
+     * 验证回调数据
+     */
+    private function validateCallbackData(array $data): bool
+    {
+        // 基本字段验证
+        if (!isset($data['deviceId'])) {
+            return false;
+        }
+
+        // 根据回调类型进行不同的验证
+        $type = $data['type'] ?? 'message';
+
+        return match ($type) {
+            'message' => isset($data['fromUser']) || isset($data['toUser']),
+            'login', 'status' => true,
+            'friend_request' => isset($data['fromUser']),
+            'group_invite' => isset($data['groupId']),
+            default => true
+        };
+    }
+
+    /**
+     * 根据设备ID查找账号
+     */
+    private function findAccountByDeviceId(string $deviceId): ?\Tourze\WechatBotBundle\Entity\WeChatAccount
+    {
+        // 这里应该使用Repository，但为了简化先直接返回null
+        // 实际使用时需要注入AccountRepository
+        return null;
     }
 
     public function __toString(): string

@@ -95,36 +95,6 @@ class WeChatMessageService
     }
 
     /**
-     * 创建发送消息记录
-     */
-    private function createOutboundMessage(
-        WeChatAccount $account,
-        string $targetWxId,
-        string $messageType,
-        ?string $content = null,
-        ?array $response = null,
-        ?string $mediaUrl = null,
-        ?string $mediaFileName = null
-    ): WeChatMessage {
-        $message = new WeChatMessage();
-        $message->setAccount($account)
-            ->setMessageType($messageType)
-            ->setDirection('outbound')
-            ->setSenderId($account->getWechatId())
-            ->setSenderName($account->getNickname())
-            ->setReceiverId($targetWxId)
-            ->setContent($content)
-            ->setMediaUrl($mediaUrl)
-            ->setMediaFileName($mediaFileName)
-            ->setRawData($response ? json_encode($response) : null);
-
-        $this->entityManager->persist($message);
-        $this->entityManager->flush();
-
-        return $message;
-    }
-
-    /**
      * 发送图片消息
      */
     public function sendImageMessage(
@@ -429,6 +399,99 @@ class WeChatMessageService
     }
 
     /**
+     * 获取未读消息
+     */
+    public function getUnreadMessages(WeChatAccount $account): array
+    {
+        return $this->messageRepository->findUnreadMessages($account);
+    }
+
+    /**
+     * 标记消息为已读
+     */
+    public function markAsRead(WeChatMessage $message): void
+    {
+        $message->markAsRead();
+        $this->entityManager->flush();
+    }
+
+    /**
+     * 批量标记消息为已读
+     */
+    public function markMultipleAsRead(array $messages): void
+    {
+        foreach ($messages as $message) {
+            if ($message instanceof WeChatMessage) {
+                $message->markAsRead();
+            }
+        }
+        $this->entityManager->flush();
+    }
+
+    /**
+     * 获取对话消息（私聊或群聊）
+     */
+    public function getConversationMessages(
+        WeChatAccount $account,
+        ?string $contactId = null,
+        ?string $groupId = null,
+        int $limit = 50
+    ): array {
+        if ($groupId) {
+            return $this->messageRepository->findGroupMessages($account, $groupId, $limit);
+        } elseif ($contactId) {
+            return $this->messageRepository->findPrivateMessages($account, $contactId, $limit);
+        }
+
+        return [];
+    }
+
+    /**
+     * 获取消息统计
+     */
+    public function getMessageStatistics(WeChatAccount $account): array
+    {
+        $unreadCount = $this->messageRepository->countUnreadByAccount($account);
+        $typeCounts = $this->messageRepository->countByMessageType($account);
+
+        return [
+            'unread_count' => $unreadCount,
+            'type_counts' => $typeCounts,
+            'total_messages' => array_sum($typeCounts)
+        ];
+    }
+
+    /**
+     * 创建发送消息记录
+     */
+    private function createOutboundMessage(
+        WeChatAccount $account,
+        string $targetWxId,
+        string $messageType,
+        ?string $content = null,
+        ?array $response = null,
+        ?string $mediaUrl = null,
+        ?string $mediaFileName = null
+    ): WeChatMessage {
+        $message = new WeChatMessage();
+        $message->setAccount($account)
+            ->setMessageType($messageType)
+            ->setDirection('outbound')
+            ->setSenderId($account->getWechatId())
+            ->setSenderName($account->getNickname())
+            ->setReceiverId($targetWxId)
+            ->setContent($content)
+            ->setMediaUrl($mediaUrl)
+            ->setMediaFileName($mediaFileName)
+            ->setRawData($response ? json_encode($response) : null);
+
+        $this->entityManager->persist($message);
+        $this->entityManager->flush();
+
+        return $message;
+    }
+
+    /**
      * 解析消息数据
      */
     private function parseMessageData(array $data): WeChatMessageData
@@ -474,69 +537,6 @@ class WeChatMessageService
     {
         return $this->entityManager->getRepository(WeChatAccount::class)
             ->findOneBy(['deviceId' => $deviceId]);
-    }
-
-    /**
-     * 获取未读消息
-     */
-    public function getUnreadMessages(WeChatAccount $account): array
-    {
-        return $this->messageRepository->findUnreadMessages($account);
-    }
-
-    /**
-     * 批量标记消息为已读
-     */
-    public function markMultipleAsRead(array $messages): void
-    {
-        foreach ($messages as $message) {
-            if ($message instanceof WeChatMessage) {
-                $message->markAsRead();
-            }
-        }
-        $this->entityManager->flush();
-    }
-
-    /**
-     * 标记消息为已读
-     */
-    public function markAsRead(WeChatMessage $message): void
-    {
-        $message->markAsRead();
-        $this->entityManager->flush();
-    }
-
-    /**
-     * 获取对话消息（私聊或群聊）
-     */
-    public function getConversationMessages(
-        WeChatAccount $account,
-        ?string $contactId = null,
-        ?string $groupId = null,
-        int $limit = 50
-    ): array {
-        if ($groupId) {
-            return $this->messageRepository->findGroupMessages($account, $groupId, $limit);
-        } elseif ($contactId) {
-            return $this->messageRepository->findPrivateMessages($account, $contactId, $limit);
-        }
-
-        return [];
-    }
-
-    /**
-     * 获取消息统计
-     */
-    public function getMessageStatistics(WeChatAccount $account): array
-    {
-        $unreadCount = $this->messageRepository->countUnreadByAccount($account);
-        $typeCounts = $this->messageRepository->countByMessageType($account);
-
-        return [
-            'unread_count' => $unreadCount,
-            'type_counts' => $typeCounts,
-            'total_messages' => array_sum($typeCounts)
-        ];
     }
 
     public function __toString(): string
