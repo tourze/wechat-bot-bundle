@@ -7,6 +7,8 @@ namespace Tourze\WechatBotBundle\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
+use Tourze\WechatBotBundle\DTO\ContactInfoResult;
+use Tourze\WechatBotBundle\DTO\ContactSearchResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatContact;
 use Tourze\WechatBotBundle\Request\AcceptFriendRequest;
@@ -30,8 +32,7 @@ class WeChatContactService
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
         private readonly LoggerInterface $logger
-    ) {
-    }
+    ) {}
 
     /**
      * 搜索联系人
@@ -47,14 +48,13 @@ class WeChatContactService
                 $data['wxid'] ?? '',
                 $data['nickname'] ?? '',
                 $data['avatar'] ?? '',
-                $data['sex'] ?? 0,
+                $this->convertSexToGender($data['sex'] ?? 0),
                 $data['signature'] ?? '',
                 $data['phone'] ?? '',
                 $data['city'] ?? '',
                 $data['province'] ?? '',
                 $data['country'] ?? ''
             );
-
         } catch (\Exception $e) {
             $this->logger->error('搜索联系人异常', [
                 'device_id' => $account->getDeviceId(),
@@ -88,7 +88,6 @@ class WeChatContactService
                 $data['tags'] ?? [],
                 (bool) ($data['is_friend'] ?? false)
             );
-
         } catch (\Exception $e) {
             $this->logger->error('获取联系人信息异常', [
                 'device_id' => $account->getDeviceId(),
@@ -124,7 +123,6 @@ class WeChatContactService
                 $data['corp_name'] ?? '',
                 $data['position'] ?? ''
             );
-
         } catch (\Exception $e) {
             $this->logger->error('获取企业微信联系人异常', [
                 'device_id' => $account->getDeviceId(),
@@ -150,7 +148,6 @@ class WeChatContactService
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             $this->logger->error('添加好友异常', [
                 'device_id' => $account->getDeviceId(),
@@ -176,7 +173,6 @@ class WeChatContactService
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             $this->logger->error('同意好友请求异常', [
                 'device_id' => $account->getDeviceId(),
@@ -202,7 +198,6 @@ class WeChatContactService
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             $this->logger->error('删除好友异常', [
                 'device_id' => $account->getDeviceId(),
@@ -229,7 +224,6 @@ class WeChatContactService
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             $this->logger->error('修改好友备注异常', [
                 'device_id' => $account->getDeviceId(),
@@ -257,7 +251,6 @@ class WeChatContactService
             ]);
 
             return $qrCodeUrl;
-
         } catch (\Exception $e) {
             $this->logger->error('获取个人二维码异常', [
                 'device_id' => $account->getDeviceId(),
@@ -314,7 +307,6 @@ class WeChatContactService
             ]);
 
             return true;
-
         } catch (\Exception $e) {
             $this->logger->error('同步联系人异常', [
                 'device_id' => $account->getDeviceId(),
@@ -389,48 +381,5 @@ class WeChatContactService
             ->setParameter('keyword', '%' . $keyword . '%')
             ->getQuery()
             ->getResult();
-    }
-}
-
-/**
- * 联系人搜索结果DTO
- */
-class ContactSearchResult
-{
-    public function __construct(
-        public readonly string $wxid,
-        public readonly string $nickname,
-        public readonly string $avatar,
-        public readonly string $sex,
-        public readonly string $signature,
-        public readonly string $phone,
-        public readonly string $city,
-        public readonly string $province,
-        public readonly string $country
-    ) {
-    }
-}
-
-/**
- * 联系人详情结果DTO
- */
-class ContactInfoResult
-{
-    public function __construct(
-        public readonly string $wxid,
-        public readonly string $nickname,
-        public readonly string $avatar,
-        public readonly string $remark,
-        public readonly int $sex,
-        public readonly string $signature,
-        public readonly string $phone,
-        public readonly string $city,
-        public readonly string $province,
-        public readonly string $country,
-        public readonly array $tags,
-        public readonly bool $isFriend,
-        public readonly string $corpName = '',
-        public readonly string $position = ''
-    ) {
     }
 }

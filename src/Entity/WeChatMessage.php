@@ -179,6 +179,13 @@ class WeChatMessage implements \Stringable
     private bool $isRead = false;
 
     #[ORM\Column(
+        type: Types::DATETIME_MUTABLE,
+        nullable: true,
+        options: ['comment' => '已读时间']
+    )]
+    private ?\DateTimeInterface $readTime = null;
+
+    #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否已回复']
     )]
@@ -387,6 +394,17 @@ class WeChatMessage implements \Stringable
         return $this;
     }
 
+    public function getReadTime(): ?\DateTimeInterface
+    {
+        return $this->readTime;
+    }
+
+    public function setReadTime(?\DateTimeInterface $readTime): static
+    {
+        $this->readTime = $readTime;
+        return $this;
+    }
+
     public function isReplied(): bool
     {
         return $this->isReplied;
@@ -466,6 +484,7 @@ class WeChatMessage implements \Stringable
     public function markAsRead(): static
     {
         $this->isRead = true;
+        $this->readTime = new \DateTime();
         return $this;
     }
 
