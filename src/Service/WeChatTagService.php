@@ -121,7 +121,7 @@ class WeChatTagService
             $currentTags = $this->getContactTags($contact);
 
             // 如果已经有这个标签，则不需要重复添加
-            if (in_array($tagId, $currentTags, true)) {
+            if ((bool) in_array($tagId, $currentTags, true)) {
                 $this->logger->info('联系人已有此标签', [
                     'device_id' => $account->getDeviceId(),
                     'contact_wxid' => $contact->getContactId(),
@@ -160,7 +160,7 @@ class WeChatTagService
     public function getContactTags(WeChatContact $contact): array
     {
         $tags = $contact->getTags();
-        if (empty($tags)) {
+        if ((bool) empty($tags)) {
             return [];
         }
 

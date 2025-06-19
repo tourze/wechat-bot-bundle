@@ -31,7 +31,6 @@ class WeChatGroup implements \Stringable
 
     #[ORM\ManyToOne(targetEntity: WeChatAccount::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    #[IndexColumn]
     private WeChatAccount $account;
 
     #[ORM\Column(
@@ -122,14 +121,14 @@ class WeChatGroup implements \Stringable
     private ?string $qrCodeUrl = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '加入群时间']
     )]
     private ?\DateTimeInterface $joinTime = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '最后活跃时间']
     )]

@@ -373,7 +373,6 @@ class WeChatMessageServiceTest extends TestCase
         $result = $this->service->getUnreadMessages($account);
 
         // 验证结果
-        $this->assertIsArray($result);
         $this->assertCount(2, $result);
     }
 
@@ -420,7 +419,6 @@ class WeChatMessageServiceTest extends TestCase
         $result = $this->service->getConversationMessages($account, $contactId);
 
         // 验证结果
-        $this->assertIsArray($result);
         $this->assertCount(2, $result);
     }
 
@@ -448,7 +446,6 @@ class WeChatMessageServiceTest extends TestCase
         $result = $this->service->getMessageStatistics($account);
 
         // 验证结果
-        $this->assertIsArray($result);
         $this->assertEquals(5, $result['unread_count']);
         $this->assertEquals($typeCounts, $result['type_counts']);
         $this->assertEquals(130, $result['total_messages']);

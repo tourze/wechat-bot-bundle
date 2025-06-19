@@ -245,7 +245,7 @@ class WeChatContactCrudController extends AbstractCrudController
             // 这里可以实现同步逻辑
             $this->addFlash('success', '联系人同步请求已发送');
         } catch (\Exception $e) {
-            $this->addFlash('error', '同步失败：' . $e->getMessage());
+            $this->addFlash('danger', '同步失败：' . $e->getMessage());
         }
 
         return $this->redirectToRoute('admin', [

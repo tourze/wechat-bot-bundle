@@ -581,7 +581,7 @@ class WeChatMomentService
         // 批量上传图片
         foreach ($imageFilePaths as $filePath) {
             $imageId = $this->uploadMomentImageFile($account, $filePath);
-            if ($imageId) {
+            if ((bool) $imageId) {
                 $uploadedImageIds[] = $imageId;
             } else {
                 $this->logger->warning('图片上传失败，跳过', [
@@ -591,7 +591,7 @@ class WeChatMomentService
             }
         }
 
-        if (empty($uploadedImageIds)) {
+        if ((bool) empty($uploadedImageIds)) {
             $this->logger->error('所有图片上传失败', [
                 'device_id' => $account->getDeviceId(),
                 'file_paths' => $imageFilePaths
@@ -691,7 +691,7 @@ class WeChatMomentService
         // 批量上传图片
         foreach ($imageBase64List as $base64) {
             $imageId = $this->uploadMomentImage($account, $base64);
-            if ($imageId) {
+            if ((bool) $imageId) {
                 $uploadedImageIds[] = $imageId;
             } else {
                 $this->logger->warning('base64图片上传失败，跳过', [
@@ -700,7 +700,7 @@ class WeChatMomentService
             }
         }
 
-        if (empty($uploadedImageIds)) {
+        if ((bool) empty($uploadedImageIds)) {
             $this->logger->error('所有base64图片上传失败', [
                 'device_id' => $account->getDeviceId(),
                 'image_count' => count($imageBase64List)

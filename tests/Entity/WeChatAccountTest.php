@@ -227,7 +227,7 @@ class WeChatAccountTest extends TestCase
     public function test_timeProperties_canBeSetAndRetrieved(): void
     {
         $account = new WeChatAccount();
-        $testTime = new \DateTime('2023-01-01 12:00:00');
+        $testTime = new \DateTimeImmutable('2023-01-01 12:00:00');
 
         // 测试最后登录时间
         $account->setLastLoginTime($testTime);

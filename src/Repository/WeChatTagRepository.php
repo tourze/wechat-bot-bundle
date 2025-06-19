@@ -172,7 +172,7 @@ class WeChatTagRepository extends ServiceEntityRepository
             ->andWhere('t.valid = :valid')
             ->setParameter('valid', true);
 
-        if ($account) {
+        if ((bool) $account) {
             $qb->andWhere('t.account = :account')
                 ->setParameter('account', $account);
         }

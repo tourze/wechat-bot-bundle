@@ -36,7 +36,6 @@ class WeChatMessage implements \Stringable
 
     #[ORM\ManyToOne(targetEntity: WeChatAccount::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    #[IndexColumn]
     private WeChatAccount $account;
 
     #[ORM\Column(
@@ -166,7 +165,7 @@ class WeChatMessage implements \Stringable
     private ?string $rawData = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         options: ['comment' => '消息时间']
     )]
     #[IndexColumn]
@@ -179,7 +178,7 @@ class WeChatMessage implements \Stringable
     private bool $isRead = false;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '已读时间']
     )]

@@ -55,7 +55,7 @@ class WeChatGroupService
 
             $groupWxid = $data['group_wxid'] ?? '';
 
-            if (empty($groupWxid)) {
+            if ((bool) empty($groupWxid)) {
                 $this->logger->error('创建群聊返回数据异常', [
                     'device_id' => $account->getDeviceId(),
                     'response_data' => $data
@@ -183,7 +183,7 @@ class WeChatGroupService
             $group = $this->entityManager->getRepository(WeChatGroup::class)
                 ->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
 
-            if ($group) {
+            if ((bool) $group) {
                 $this->entityManager->remove($group);
                 $this->entityManager->flush();
             }
@@ -217,7 +217,7 @@ class WeChatGroupService
             $group = $this->entityManager->getRepository(WeChatGroup::class)
                 ->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
 
-            if ($group) {
+            if ((bool) $group) {
                 $group->setGroupName($groupName);
                 $this->entityManager->flush();
             }
@@ -253,7 +253,7 @@ class WeChatGroupService
             $group = $this->entityManager->getRepository(WeChatGroup::class)
                 ->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
 
-            if ($group) {
+            if ((bool) $group) {
                 $group->setRemark($remark);
                 $this->entityManager->flush();
             }
@@ -588,7 +588,7 @@ class WeChatGroupService
             $syncCount = 0;
             foreach ($groups as $groupData) {
                 $wxid = $groupData['wxid'] ?? '';
-                if (empty($wxid)) {
+                if ((bool) empty($wxid)) {
                     continue;
                 }
 

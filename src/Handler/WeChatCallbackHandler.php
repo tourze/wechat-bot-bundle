@@ -45,12 +45,12 @@ class WeChatCallbackHandler
 
             // 获取回调数据
             $content = $request->getContent();
-            if (empty($content)) {
+            if ((bool) empty($content)) {
                 return new JsonResponse(['error' => 'Empty request body'], 400);
             }
 
             $data = json_decode($content, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if ((bool) json_last_error() !== JSON_ERROR_NONE) {
                 return new JsonResponse(['error' => 'Invalid JSON'], 400);
             }
 
@@ -62,7 +62,7 @@ class WeChatCallbackHandler
             // 处理不同类型的回调
             $result = $this->processCallback($data);
 
-            if ($result) {
+            if ((bool) $result) {
                 return new JsonResponse(['status' => 'success', 'message' => 'Callback processed']);
             } else {
                 return new JsonResponse(['status' => 'error', 'message' => 'Failed to process callback'], 500);
@@ -164,13 +164,13 @@ class WeChatCallbackHandler
 
             if ($loginStatus === 'success' || $loginStatus === 'online') {
                 $account->markAsOnline();
-                if (isset($data['wxId'])) {
+                if ((bool) isset($data['wxId'])) {
                     $account->setWechatId($data['wxId']);
                 }
-                if (isset($data['nickname'])) {
+                if ((bool) isset($data['nickname'])) {
                     $account->setNickname($data['nickname']);
                 }
-                if (isset($data['avatar'])) {
+                if ((bool) isset($data['avatar'])) {
                     $account->setAvatar($data['avatar']);
                 }
                 $account->setLastLoginTime(new \DateTime());
@@ -336,7 +336,7 @@ class WeChatCallbackHandler
             $account = $message->getAccount();
             $targetWxId = $message->getSenderId();
 
-            if ($targetWxId) {
+            if ((bool) $targetWxId) {
                 $this->messageService->sendTextMessage($account, $targetWxId, $autoReply);
                 $message->markAsReplied();
             }

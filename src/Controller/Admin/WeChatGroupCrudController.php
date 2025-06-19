@@ -150,7 +150,7 @@ class WeChatGroupCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('群成员列表的JSON数据')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '共 ' . count($value) . ' 个成员';
                 }
                 return $value;
@@ -219,7 +219,7 @@ class WeChatGroupCrudController extends AbstractCrudController
             // 这里可以实现同步群信息的逻辑
             $this->addFlash('success', '群信息同步请求已发送');
         } catch (\Exception $e) {
-            $this->addFlash('error', '同步失败：' . $e->getMessage());
+            $this->addFlash('danger', '同步失败：' . $e->getMessage());
         }
 
         return $this->redirectToRoute('admin', [

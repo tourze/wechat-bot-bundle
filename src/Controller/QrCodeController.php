@@ -173,7 +173,7 @@ class QrCodeController extends AbstractController
         try {
             $success = $this->accountService->logout($account);
 
-            if ($success) {
+            if ((bool) $success) {
                 return new JsonResponse([
                     'success' => true,
                     'message' => '退出登录成功'

@@ -11,8 +11,7 @@ use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 use Tourze\WechatBotBundle\Repository\WeChatApiAccountRepository;
 
 /**
@@ -31,6 +30,7 @@ use Tourze\WechatBotBundle\Repository\WeChatApiAccountRepository;
 class WeChatApiAccount implements \Stringable
 {
     use TimestampableAware;
+    use BlameableAware;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -46,7 +46,6 @@ class WeChatApiAccount implements \Stringable
     #[Assert\NotBlank(message: '账号名称不能为空')]
     #[Assert\Length(max: 100, maxMessage: '账号名称不能超过100个字符')]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $name = null;
 
     #[ORM\Column(
@@ -58,7 +57,6 @@ class WeChatApiAccount implements \Stringable
     #[Assert\Url(message: 'API网关地址格式不正确')]
     #[Assert\Length(max: 255, maxMessage: 'API网关地址不能超过255个字符')]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $baseUrl = null;
 
     #[ORM\Column(
@@ -92,21 +90,21 @@ class WeChatApiAccount implements \Stringable
     private ?string $accessToken = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '令牌过期时间']
     )]
     private ?\DateTimeInterface $tokenExpiresTime = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '最后登录时间']
     )]
     private ?\DateTimeInterface $lastLoginTime = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '最后调用API时间']
     )]
@@ -130,7 +128,6 @@ class WeChatApiAccount implements \Stringable
         message: '连接状态必须是: connected, disconnected, error 中的一个'
     )]
     #[IndexColumn]
-    #[TrackColumn]
     private string $connectionStatus = 'disconnected';
 
     #[ORM\Column(
@@ -154,21 +151,6 @@ class WeChatApiAccount implements \Stringable
     )]
     private ?string $remark = null;
 
-    #[CreatedByColumn]
-    #[ORM\Column(
-        type: Types::INTEGER,
-        nullable: true,
-        options: ['comment' => '创建人ID']
-    )]
-    private ?int $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(
-        type: Types::INTEGER,
-        nullable: true,
-        options: ['comment' => '更新人ID']
-    )]
-    private ?int $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(
@@ -343,27 +325,6 @@ class WeChatApiAccount implements \Stringable
         return $this;
     }
 
-    public function getCreatedBy(): ?int
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?int $createdBy): static
-    {
-        $this->createdBy = $createdBy;
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?int
-    {
-        return $this->updatedBy;
-    }
-
-    public function setUpdatedBy(?int $updatedBy): static
-    {
-        $this->updatedBy = $updatedBy;
-        return $this;
-    }
 
     public function getCreatedFromIp(): ?string
     {

@@ -58,7 +58,7 @@ class WeChatAccountService
             $deviceId = $account->getDeviceId();
 
             // 设置代理（如果提供）
-            if ($proxy) {
+            if ((bool) $proxy) {
                 $this->setDeviceProxy($apiAccount, $deviceId, $proxy);
                 $account->setProxy($proxy);
             }
@@ -127,7 +127,7 @@ class WeChatAccountService
             ]);
 
             // 2. 设置代理（如果提供）
-            if ($proxy) {
+            if ((bool) $proxy) {
                 $this->setDeviceProxy($apiAccount, $deviceId, $proxy);
             }
 
@@ -186,7 +186,7 @@ class WeChatAccountService
             $confirmRequest = new ConfirmLoginRequest($account->getApiAccount(), $account->getDeviceId());
             $response = $this->apiClient->request($confirmRequest);
 
-            if (isset($response['data']['login']) && $response['data']['login'] === true) {
+            if ((bool) isset($response['data']['login']) && $response['data']['login'] === true) {
                 // 登录成功，更新账号信息
                 $this->updateAccountFromLoginResponse($account, $response['data']);
 
@@ -240,7 +240,7 @@ class WeChatAccountService
             // 更新账号状态
             if ($account->getStatus() !== $status) {
                 $account->setStatus($status);
-                if ($isOnline) {
+                if ((bool) $isOnline) {
                     $account->updateLastActiveTime();
                 }
                 $this->entityManager->flush();
@@ -334,7 +334,7 @@ class WeChatAccountService
         try {
             // 解析代理格式：host:port:username:password
             $proxyParts = explode(':', $proxy);
-            if (count($proxyParts) < 2) {
+            if ((bool) count($proxyParts) < 2) {
                 throw new \InvalidArgumentException('Invalid proxy format, expected: host:port[:username:password]');
             }
 
@@ -412,15 +412,15 @@ class WeChatAccountService
      */
     private function updateAccountFromLoginResponse(WeChatAccount $account, array $data): void
     {
-        if (isset($data['wxId'])) {
+        if ((bool) isset($data['wxId'])) {
             $account->setWechatId($data['wxId']);
         }
 
-        if (isset($data['nickname'])) {
+        if ((bool) isset($data['nickname'])) {
             $account->setNickname($data['nickname']);
         }
 
-        if (isset($data['avatar'])) {
+        if ((bool) isset($data['avatar'])) {
             $account->setAvatar($data['avatar']);
         }
 

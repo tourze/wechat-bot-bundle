@@ -21,12 +21,13 @@ use Tourze\WechatBotBundle\Service\WeChatGroupService;
  * 用于定时同步所有在线微信账号的群组信息
  */
 #[AsCommand(
-    name: 'wechat:sync-groups',
+    name: self::NAME,
     description: '同步微信群组信息'
 )]
 class SyncGroupsCommand extends Command
 {
-    public function __construct(
+    public const NAME = 'wechat:sync-groups';
+public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatAccountRepository $accountRepository,
         private readonly WeChatGroupService $groupService,
@@ -66,7 +67,7 @@ class SyncGroupsCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $accountId = $input->getArgument('account-id');
-        $force = $input->getOption('force');
+        $force = (bool) $input->getOption('force');
         $onlyOnline = $input->getOption('only-online');
         $batchSize = (int) $input->getOption('batch-size');
         $delay = (int) $input->getOption('delay');
@@ -75,7 +76,7 @@ class SyncGroupsCommand extends Command
         $io->title('微信群组同步');
 
         try {
-            if ($accountId) {
+            if ((bool) $accountId) {
                 // 同步指定账号
                 $account = $this->accountRepository->find($accountId);
                 if (!$account) {
@@ -121,13 +122,13 @@ class SyncGroupsCommand extends Command
             // 执行群组同步
             $success = $this->groupService->syncGroups($account);
 
-            if ($success && $syncMembers) {
+            if ($success && (bool) $syncMembers) {
                 $io->writeln("开始同步群成员信息...");
                 $this->syncGroupMembers($account, $delay);
             }
 
             $io->progressFinish();
-            if ($success) {
+            if ((bool) $success) {
                 $io->success("账号 {$account->getWechatId()} 群组同步完成");
             } else {
                 $io->warning("账号 {$account->getWechatId()} 群组同步可能有部分失败");
@@ -200,7 +201,7 @@ class SyncGroupsCommand extends Command
             $io->writeln("找到 " . count($accounts) . " 个有效账号");
         }
 
-        if (empty($accounts)) {
+        if ((bool) empty($accounts)) {
             $io->warning('没有找到可同步的账号');
             return Command::SUCCESS;
         }
@@ -228,10 +229,10 @@ class SyncGroupsCommand extends Command
                     // 执行群组同步
                     $success = $this->groupService->syncGroups($account);
 
-                    if ($success) {
+                    if ((bool) $success) {
                         $io->writeln("  群组同步完成");
 
-                        if ($syncMembers) {
+                        if ((bool) $syncMembers) {
                             $io->writeln("  开始同步群成员...");
                             $this->syncGroupMembers($account, $delay);
                         }

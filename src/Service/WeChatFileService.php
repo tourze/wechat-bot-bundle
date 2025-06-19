@@ -59,7 +59,7 @@ class WeChatFileService
             }
 
             // 保存文件到本地
-            if (file_put_contents($localPath, base64_decode($content)) === false) {
+            if ((bool) file_put_contents($localPath, base64_decode($content)) === false) {
                 $this->logger->error('保存CDN资源到本地失败', [
                     'device_id' => $account->getDeviceId(),
                     'local_path' => $localPath
@@ -169,10 +169,10 @@ class WeChatFileService
     public function deleteLocalFile(string $filePath): bool
     {
         try {
-            if (file_exists($filePath)) {
+            if ((bool) file_exists($filePath)) {
                 $result = unlink($filePath);
 
-                if ($result) {
+                if ((bool) $result) {
                     $this->logger->info('删除本地文件成功', ['file_path' => $filePath]);
                 } else {
                     $this->logger->warning('删除本地文件失败', ['file_path' => $filePath]);

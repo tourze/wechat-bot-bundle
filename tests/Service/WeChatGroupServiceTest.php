@@ -289,7 +289,6 @@ class WeChatGroupServiceTest extends TestCase
         $result = $this->service->getGroupMembers($account, $groupId);
 
         // 验证结果
-        $this->assertIsArray($result);
         $this->assertCount(0, $result);
     }
 

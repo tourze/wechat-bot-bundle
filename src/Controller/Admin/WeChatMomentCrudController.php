@@ -126,7 +126,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('图片URL列表的JSON数据')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '共 ' . count($value) . ' 张图片';
                 }
                 return $value;
@@ -137,7 +137,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('视频信息的JSON数据')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '视频: ' . ($value['title'] ?? '无标题');
                 }
                 return $value;
@@ -148,7 +148,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('链接信息的JSON数据')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '链接: ' . ($value['title'] ?? '无标题');
                 }
                 return $value;
@@ -194,7 +194,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('点赞用户列表的JSON数据')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '共 ' . count($value) . ' 个用户点赞';
                 }
                 return $value;
@@ -205,7 +205,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('评论列表的JSON数据')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '共 ' . count($value) . ' 条评论';
                 }
                 return $value;

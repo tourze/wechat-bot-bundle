@@ -27,12 +27,13 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
  * @author AI Assistant
  */
 #[AsCommand(
-    name: 'wechat-bot:check-online-status',
+    name: self::NAME,
     description: '检查所有微信账号的在线状态'
 )]
 class CheckOnlineStatusCommand extends Command
 {
-    public function __construct(
+    public const NAME = 'wechat-bot:check-online-status';
+public function __construct(
         private readonly WeChatAccountRepository $accountRepository,
         private readonly WeChatAccountService $accountService,
         private readonly LoggerInterface $logger
@@ -77,7 +78,7 @@ class CheckOnlineStatusCommand extends Command
             // 获取要检查的账号列表
             $accounts = $this->getAccountsToCheck($input);
             
-            if (empty($accounts)) {
+            if ((bool) empty($accounts)) {
                 $io->info('没有找到需要检查的账号');
                 return Command::SUCCESS;
             }
@@ -124,13 +125,13 @@ class CheckOnlineStatusCommand extends Command
         $accountId = $input->getOption('account-id');
         $onlyOnline = $input->getOption('only-online');
 
-        if ($accountId) {
+        if ((bool) $accountId) {
             // 检查指定账号
             $account = $this->accountRepository->find($accountId);
             return $account ? [$account] : [];
         }
 
-        if ($onlyOnline) {
+        if ((bool) $onlyOnline) {
             // 只检查在线账号
             return $this->accountRepository->findBy(['status' => 'online']);
         }

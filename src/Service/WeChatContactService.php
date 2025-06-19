@@ -273,7 +273,7 @@ class WeChatContactService
 
             foreach ($friends as $friendData) {
                 $contactId = $friendData['wxid'] ?? '';
-                if (empty($contactId)) {
+                if ((bool) empty($contactId)) {
                     continue;
                 }
 

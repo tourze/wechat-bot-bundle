@@ -35,8 +35,6 @@ class LoginPlatformRequestTest extends TestCase
     {
         $request = new LoginPlatformRequest($this->apiAccount);
         $options = $request->getRequestOptions();
-
-        $this->assertIsArray($options);
         $this->assertArrayHasKey('form_params', $options);
         $this->assertEquals('test_account', $options['form_params']['username']);
         $this->assertEquals('test_password', $options['form_params']['password']);

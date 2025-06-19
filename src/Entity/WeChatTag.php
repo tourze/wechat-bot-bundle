@@ -8,7 +8,6 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
-use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\WechatBotBundle\Repository\WeChatTagRepository;
 
 /**
@@ -38,7 +37,6 @@ class WeChatTag implements \Stringable
     #[ORM\JoinColumn(name: 'account_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull(message: '微信账号不能为空')]
     #[IndexColumn]
-    #[TrackColumn]
     private ?WeChatAccount $account = null;
 
     #[ORM\Column(
@@ -49,7 +47,6 @@ class WeChatTag implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $tagId = null;
 
     #[ORM\Column(
@@ -60,7 +57,6 @@ class WeChatTag implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $tagName = null;
 
     #[ORM\Column(

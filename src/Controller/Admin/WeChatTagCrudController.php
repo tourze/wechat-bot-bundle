@@ -121,7 +121,7 @@ class WeChatTagCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('使用此标签的好友微信ID列表')
             ->formatValue(function ($value) {
-                if (is_array($value)) {
+                if ((bool) is_array($value)) {
                     return '包含好友: ' . implode(', ', array_slice($value, 0, 10)) . (count($value) > 10 ? '...' : '');
                 }
                 return $value;
@@ -182,7 +182,7 @@ class WeChatTagCrudController extends AbstractCrudController
             // 这里可以实现同步标签的逻辑
             $this->addFlash('success', '标签同步请求已发送');
         } catch (\Exception $e) {
-            $this->addFlash('error', '同步失败：' . $e->getMessage());
+            $this->addFlash('danger', '同步失败：' . $e->getMessage());
         }
 
         return $this->redirectToRoute('admin', [

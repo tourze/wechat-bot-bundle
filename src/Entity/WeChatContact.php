@@ -32,7 +32,6 @@ class WeChatContact implements \Stringable
 
     #[ORM\ManyToOne(targetEntity: WeChatAccount::class)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    #[IndexColumn]
     private WeChatAccount $account;
 
     #[ORM\Column(
@@ -118,14 +117,14 @@ class WeChatContact implements \Stringable
     private ?string $tags = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '添加好友时间']
     )]
     private ?\DateTimeInterface $addFriendTime = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '最后聊天时间']
     )]

@@ -39,7 +39,6 @@ class WeChatAccount implements \Stringable
     #[ORM\JoinColumn(name: 'api_account_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull(message: 'API账号不能为空')]
     #[IndexColumn]
-    #[TrackColumn]
     private ?WeChatApiAccount $apiAccount = null;
 
     #[ORM\Column(
@@ -51,7 +50,6 @@ class WeChatAccount implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $deviceId = null;
 
     #[ORM\Column(
@@ -62,7 +60,6 @@ class WeChatAccount implements \Stringable
     )]
     #[Assert\Length(max: 100)]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $wechatId = null;
 
     #[ORM\Column(
@@ -93,7 +90,6 @@ class WeChatAccount implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Choice(choices: ['pending_login', 'online', 'offline', 'expired'])]
     #[IndexColumn]
-    #[TrackColumn]
     private string $status = 'pending_login';
 
     #[ORM\Column(
@@ -123,14 +119,14 @@ class WeChatAccount implements \Stringable
     private ?string $accessToken = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '最后登录时间']
     )]
     private ?\DateTimeInterface $lastLoginTime = null;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         nullable: true,
         options: ['comment' => '最后活跃时间']
     )]

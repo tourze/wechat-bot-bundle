@@ -354,7 +354,7 @@ class WeChatMessageService
                     'account' => $account
                 ]);
 
-                if ($existingMessage) {
+                if ((bool) $existingMessage) {
                     return $existingMessage;
                 }
             }
@@ -421,7 +421,7 @@ class WeChatMessageService
     public function markMultipleAsRead(array $messages): void
     {
         foreach ($messages as $message) {
-            if ($message instanceof WeChatMessage) {
+            if ((bool) $message instanceof WeChatMessage) {
                 $message->markAsRead();
             }
         }
@@ -437,9 +437,9 @@ class WeChatMessageService
         ?string $groupId = null,
         int $limit = 50
     ): array {
-        if ($groupId) {
+        if ((bool) $groupId) {
             return $this->messageRepository->findGroupMessages($account, $groupId, $limit);
-        } elseif ($contactId) {
+        } elseif ((bool) $contactId) {
             return $this->messageRepository->findPrivateMessages($account, $contactId, $limit);
         }
 

@@ -19,12 +19,13 @@ use Tourze\WechatBotBundle\Service\WeChatContactService;
  * 用于定时同步所有在线微信账号的联系人信息
  */
 #[AsCommand(
-    name: 'wechat:sync-contacts',
+    name: self::NAME,
     description: '同步微信联系人信息'
 )]
 class SyncContactsCommand extends Command
 {
-    public function __construct(
+    public const NAME = 'wechat:sync-contacts';
+public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatAccountRepository $accountRepository,
         private readonly WeChatContactService $contactService
@@ -61,7 +62,7 @@ class SyncContactsCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $accountId = $input->getArgument('account-id');
-        $force = $input->getOption('force');
+        $force = (bool) $input->getOption('force');
         $onlyOnline = $input->getOption('only-online');
         $batchSize = (int) $input->getOption('batch-size');
         $delay = (int) $input->getOption('delay');
@@ -69,7 +70,7 @@ class SyncContactsCommand extends Command
         $io->title('微信联系人同步');
 
         try {
-            if ($accountId) {
+            if ((bool) $accountId) {
                 // 同步指定账号
                 $account = $this->accountRepository->find($accountId);
                 if (!$account) {
@@ -115,7 +116,7 @@ class SyncContactsCommand extends Command
             $success = $this->contactService->syncContacts($account);
 
             $io->progressFinish();
-            if ($success) {
+            if ((bool) $success) {
                 $io->success("账号 {$account->getWechatId()} 联系人同步完成");
             } else {
                 $io->warning("账号 {$account->getWechatId()} 联系人同步可能有部分失败");
@@ -154,7 +155,7 @@ class SyncContactsCommand extends Command
             $io->writeln("找到 " . count($accounts) . " 个有效账号");
         }
 
-        if (empty($accounts)) {
+        if ((bool) empty($accounts)) {
             $io->warning('没有找到可同步的账号');
             return Command::SUCCESS;
         }

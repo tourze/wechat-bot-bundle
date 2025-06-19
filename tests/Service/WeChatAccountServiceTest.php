@@ -393,7 +393,6 @@ class WeChatAccountServiceTest extends TestCase
         $result = $this->service->getAccountsStatistics();
 
         // 验证结果
-        $this->assertIsArray($result);
         $this->assertEquals(10, $result['total']);
         $this->assertEquals(5, $result['online']);
         $this->assertEquals(3, $result['offline']);

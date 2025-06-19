@@ -7,7 +7,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
-use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\WechatBotBundle\Repository\WeChatMomentRepository;
 
 /**
@@ -37,7 +36,6 @@ class WeChatMoment implements \Stringable
     #[ORM\JoinColumn(name: 'account_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull(message: '微信账号不能为空')]
     #[IndexColumn]
-    #[TrackColumn]
     private ?WeChatAccount $account = null;
 
     #[ORM\Column(
@@ -48,7 +46,6 @@ class WeChatMoment implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $momentId = null;
 
     #[ORM\Column(
@@ -59,7 +56,6 @@ class WeChatMoment implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $authorWxid = null;
 
     #[ORM\Column(
@@ -89,7 +85,6 @@ class WeChatMoment implements \Stringable
     #[Assert\NotBlank]
     #[Assert\Choice(choices: ['text', 'image', 'video', 'link'])]
     #[IndexColumn]
-    #[TrackColumn]
     private ?string $momentType = null;
 
     #[ORM\Column(
@@ -148,7 +143,7 @@ class WeChatMoment implements \Stringable
     private bool $isLiked = false;
 
     #[ORM\Column(
-        type: Types::DATETIME_MUTABLE,
+        type: Types::DATETIME_IMMUTABLE,
         options: ['comment' => '发布时间']
     )]
     #[IndexColumn]

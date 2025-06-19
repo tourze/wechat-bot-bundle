@@ -116,7 +116,7 @@ class WeChatMomentRepository extends ServiceEntityRepository
             ->andWhere('m.valid = :valid')
             ->setParameter('valid', true);
 
-        if ($account) {
+        if ((bool) $account) {
             $qb->andWhere('m.account = :account')
                 ->setParameter('account', $account);
         }
@@ -143,7 +143,7 @@ class WeChatMomentRepository extends ServiceEntityRepository
             ->setParameter('valid', true)
             ->orderBy('m.publishTime', 'DESC');
 
-        if ($account) {
+        if ((bool) $account) {
             $qb->andWhere('m.account = :account')
                 ->setParameter('account', $account);
         }
