@@ -22,7 +22,7 @@ class WeChatApiClient extends ApiClient
             $apiAccount = $request->getApiAccount();
             $baseUrl = $apiAccount->getBaseUrl();
 
-            if ((bool) empty($baseUrl)) {
+            if (empty($baseUrl)) {
                 return false;
             }
 
@@ -30,7 +30,7 @@ class WeChatApiClient extends ApiClient
             $apiAccount->markAsConnected();
             return true;
         } catch (\Exception $e) {
-            if ((bool) $request instanceof WeChatRequestInterface) {
+            if ($request instanceof WeChatRequestInterface) {
                 $request->getApiAccount()->markAsError();
             }
             return false;
@@ -41,14 +41,14 @@ class WeChatApiClient extends ApiClient
     {
         $path = ltrim($request->getRequestPath(), '/');
 
-        if ((bool) str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;
         }
 
         // 如果是微信请求，从Request中获取baseUrl
-        if ((bool) $request instanceof WeChatRequestInterface) {
+        if ($request instanceof WeChatRequestInterface) {
             $baseUrl = $request->getApiAccount()->getBaseUrl();
-            if ((bool) empty($baseUrl)) {
+            if (empty($baseUrl)) {
                 throw new \RuntimeException('微信API基础URL未设置');
             }
             return "{$baseUrl}/{$path}";
@@ -71,14 +71,14 @@ class WeChatApiClient extends ApiClient
             'User-Agent' => 'WeChatBot/1.0',
         ];
 
-        if ((bool) isset($options['headers'])) {
+        if (isset($options['headers'])) {
             $options['headers'] = array_merge($defaultHeaders, $options['headers']);
         } else {
             $options['headers'] = $defaultHeaders;
         }
 
         // 如果是微信请求，获取timeout配置
-        if ((bool) $request instanceof WeChatRequestInterface) {
+        if ($request instanceof WeChatRequestInterface) {
             $timeout = $request->getApiAccount()->getTimeout();
             if (!isset($options['timeout'])) {
                 $options['timeout'] = $timeout;
@@ -93,24 +93,24 @@ class WeChatApiClient extends ApiClient
         $content = $response->getContent();
         $data = json_decode($content, true);
 
-        if ((bool) json_last_error() !== JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \RuntimeException('响应不是有效的JSON格式: ' . json_last_error_msg());
         }
 
         // 如果是微信请求，更新API调用统计
-        if ((bool) $request instanceof WeChatRequestInterface) {
+        if ($request instanceof WeChatRequestInterface) {
             $apiAccount = $request->getApiAccount();
             $apiAccount->incrementApiCallCount();
         }
 
         // 检查API响应状态 - 微信API成功码是 "1000" (字符串)
-        if ((bool) isset($data['code']) && $data['code'] !== '1000' && $data['code'] !== 1000) {
+        if (isset($data['code']) && $data['code'] !== '1000' && $data['code'] !== 1000) {
             $message = $data['message'] ?? $data['msg'] ?? '未知错误';
 
             // 如果是认证错误且是微信请求，标记API账号状态
-            if ((bool) $request instanceof WeChatRequestInterface) {
+            if ($request instanceof WeChatRequestInterface) {
                 $errorCodes = ['401', '403', 'AUTH_FAILED', 401, 403];
-                if ((bool) in_array($data['code'], $errorCodes)) {
+                if (in_array($data['code'], $errorCodes)) {
                     $request->getApiAccount()->markAsError();
                 }
             }

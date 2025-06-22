@@ -33,7 +33,7 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
 class CheckOnlineStatusCommand extends Command
 {
     public const NAME = 'wechat-bot:check-online-status';
-public function __construct(
+    public function __construct(
         private readonly WeChatAccountRepository $accountRepository,
         private readonly WeChatAccountService $accountService,
         private readonly LoggerInterface $logger
@@ -77,8 +77,8 @@ public function __construct(
         try {
             // 获取要检查的账号列表
             $accounts = $this->getAccountsToCheck($input);
-            
-            if ((bool) empty($accounts)) {
+
+            if (empty($accounts)) {
                 $io->info('没有找到需要检查的账号');
                 return Command::SUCCESS;
             }
@@ -105,7 +105,6 @@ public function __construct(
             $this->outputStatistics($io, $stats, $startTime);
 
             return Command::SUCCESS;
-
         } catch (\Exception $e) {
             $this->logger->error('Check online status command failed', [
                 'error' => $e->getMessage(),
@@ -125,13 +124,13 @@ public function __construct(
         $accountId = $input->getOption('account-id');
         $onlyOnline = $input->getOption('only-online');
 
-        if ((bool) $accountId) {
+        if ($accountId) {
             // 检查指定账号
             $account = $this->accountRepository->find($accountId);
-            return $account ? [$account] : [];
+            return $account !== null ? [$account] : [];
         }
 
-        if ((bool) $onlyOnline) {
+        if ($onlyOnline) {
             // 只检查在线账号
             return $this->accountRepository->findBy(['status' => 'online']);
         }
@@ -168,7 +167,7 @@ public function __construct(
             // 检查状态是否变化
             if ($previousStatus !== $currentStatus) {
                 $stats['status_changed']++;
-                
+
                 $io->writeln(sprintf(
                     '  ✓ 状态变化: %s → %s',
                     $previousStatus,
@@ -190,10 +189,9 @@ public function __construct(
                     $deviceStatus->isOnline ? '是' : '否'
                 ), OutputInterface::VERBOSITY_VERBOSE);
             }
-
         } catch (\Exception $e) {
             $stats['errors']++;
-            
+
             $io->writeln(sprintf(
                 '  ✗ 检查失败: %s',
                 $e->getMessage()
@@ -239,7 +237,7 @@ public function __construct(
 
         $table = $io->createTable();
         $table->setHeaders(['状态', '数量', '百分比']);
-        
+
         $total = $stats['total'];
         if ($total > 0) {
             $table->addRows([
@@ -267,4 +265,4 @@ public function __construct(
             'duration' => $duration
         ]);
     }
-} 
+}

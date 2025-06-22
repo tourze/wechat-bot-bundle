@@ -2,7 +2,6 @@
 
 namespace Tourze\WechatBotBundle\Controller\Admin;
 
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -23,14 +22,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\HttpFoundation\Response;
 use Tourze\WechatBotBundle\Entity\WeChatContact;
-use Tourze\WechatBotBundle\Service\WeChatContactService;
 
 class WeChatContactCrudController extends AbstractCrudController
 {
-    public function __construct(
-        private readonly WeChatContactService $contactService,
-        private readonly EntityManagerInterface $entityManager
-    ) {}
+    public function __construct() {}
 
     public static function getEntityFqcn(): string
     {
@@ -81,7 +76,7 @@ class WeChatContactCrudController extends AbstractCrudController
             ->setRequired(true)
             ->autocomplete()
             ->formatValue(function ($value, WeChatContact $entity) {
-                return $entity->getAccount()?->getNickname() ?: $entity->getAccount()?->getWechatId();
+                return $entity->getAccount()->getNickname() ?: $entity->getAccount()->getWechatId();
             });
 
         yield TextField::new('wxid', '微信ID')

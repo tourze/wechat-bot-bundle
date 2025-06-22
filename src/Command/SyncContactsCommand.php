@@ -2,7 +2,6 @@
 
 namespace Tourze\WechatBotBundle\Command;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -25,8 +24,8 @@ use Tourze\WechatBotBundle\Service\WeChatContactService;
 class SyncContactsCommand extends Command
 {
     public const NAME = 'wechat:sync-contacts';
-public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+
+    public function __construct(
         private readonly WeChatAccountRepository $accountRepository,
         private readonly WeChatContactService $contactService
     ) {
@@ -70,10 +69,10 @@ public function __construct(
         $io->title('微信联系人同步');
 
         try {
-            if ((bool) $accountId) {
+            if ($accountId) {
                 // 同步指定账号
                 $account = $this->accountRepository->find($accountId);
-                if (!$account) {
+                if ($account === null) {
                     $io->error("未找到ID为 {$accountId} 的微信账号");
                     return Command::FAILURE;
                 }
@@ -116,7 +115,7 @@ public function __construct(
             $success = $this->contactService->syncContacts($account);
 
             $io->progressFinish();
-            if ((bool) $success) {
+            if ($success) {
                 $io->success("账号 {$account->getWechatId()} 联系人同步完成");
             } else {
                 $io->warning("账号 {$account->getWechatId()} 联系人同步可能有部分失败");
@@ -155,7 +154,7 @@ public function __construct(
             $io->writeln("找到 " . count($accounts) . " 个有效账号");
         }
 
-        if ((bool) empty($accounts)) {
+        if (empty($accounts)) {
             $io->warning('没有找到可同步的账号');
             return Command::SUCCESS;
         }
@@ -199,21 +198,24 @@ public function __construct(
             }
 
             // 批次间隔
-            if ($batchIndex < count($batches) - 1 && $delay > 0) {
-                $io->writeln("批次间等待 " . ($delay * 2) . " 秒...");
-                sleep($delay * 2);
+            if ($delay > 0 && $batchIndex < count($batches) - 1) {
+                $io->writeln("批次间隔等待 {$delay} 秒...");
+                sleep($delay);
             }
         }
 
         $io->progressFinish();
 
-        // 显示统计结果
-        $io->success([
-            '联系人同步完成',
-            "成功同步：{$successCount} 个账号",
-            "同步失败：{$failureCount} 个账号",
-            "总计处理：" . count($accounts) . " 个账号"
-        ]);
+        // 输出统计结果
+        $io->section('同步结果统计');
+        $io->writeln("成功同步：{$successCount} 个账号");
+        $io->writeln("同步失败：{$failureCount} 个账号");
+
+        if ($failureCount > 0) {
+            $io->warning("部分账号同步失败，请检查日志获取详细信息");
+        } else {
+            $io->success('所有账号同步完成！');
+        }
 
         return $failureCount > 0 ? Command::FAILURE : Command::SUCCESS;
     }

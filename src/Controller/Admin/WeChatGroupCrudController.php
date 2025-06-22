@@ -2,7 +2,6 @@
 
 namespace Tourze\WechatBotBundle\Controller\Admin;
 
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -23,14 +22,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\HttpFoundation\Response;
 use Tourze\WechatBotBundle\Entity\WeChatGroup;
-use Tourze\WechatBotBundle\Service\WeChatGroupService;
 
 class WeChatGroupCrudController extends AbstractCrudController
 {
-    public function __construct(
-        private readonly WeChatGroupService $groupService,
-        private readonly EntityManagerInterface $entityManager
-    ) {}
+    public function __construct() {}
 
     public static function getEntityFqcn(): string
     {
@@ -70,7 +65,7 @@ class WeChatGroupCrudController extends AbstractCrudController
             ->setRequired(true)
             ->autocomplete()
             ->formatValue(function ($value, WeChatGroup $entity) {
-                return $entity->getAccount()?->getNickname() ?: $entity->getAccount()?->getWechatId();
+                return $entity->getAccount()->getNickname() ?: $entity->getAccount()->getWechatId();
             });
 
         yield TextField::new('groupId', '群ID')
@@ -150,7 +145,7 @@ class WeChatGroupCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('群成员列表的JSON数据')
             ->formatValue(function ($value) {
-                if ((bool) is_array($value)) {
+                if (is_array($value)) {
                     return '共 ' . count($value) . ' 个成员';
                 }
                 return $value;

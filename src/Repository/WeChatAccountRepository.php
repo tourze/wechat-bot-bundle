@@ -84,7 +84,7 @@ class WeChatAccountRepository extends ServiceEntityRepository
 
     /**
      * 查找所有活跃账号（非删除状态）
-     * 
+     *
      * @return WeChatAccount[]
      */
     public function findActiveAccounts(): array
@@ -95,5 +95,25 @@ class WeChatAccountRepository extends ServiceEntityRepository
             ->orderBy('a.createdTime', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * 查找所有在线账号
+     *
+     * @return WeChatAccount[]
+     */
+    public function findOnlineAccounts(): array
+    {
+        return $this->findBy(['status' => 'online', 'valid' => true]);
+    }
+
+    /**
+     * 查找所有有效账号
+     *
+     * @return WeChatAccount[]
+     */
+    public function findAllValidAccounts(): array
+    {
+        return $this->findBy(['valid' => true]);
     }
 }

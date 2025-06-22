@@ -2,7 +2,6 @@
 
 namespace Tourze\WechatBotBundle\Controller\Admin;
 
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -24,14 +23,10 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\HttpFoundation\Response;
 use Tourze\WechatBotBundle\Entity\WeChatMoment;
-use Tourze\WechatBotBundle\Service\WeChatMomentService;
 
 class WeChatMomentCrudController extends AbstractCrudController
 {
-    public function __construct(
-        private readonly WeChatMomentService $momentService,
-        private readonly EntityManagerInterface $entityManager
-    ) {}
+    public function __construct() {}
 
     public static function getEntityFqcn(): string
     {
@@ -78,7 +73,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->setRequired(true)
             ->autocomplete()
             ->formatValue(function ($value, WeChatMoment $entity) {
-                return $entity->getAccount()?->getNickname() ?: $entity->getAccount()?->getWechatId();
+                return $entity->getAccount()->getNickname() ?: $entity->getAccount()->getWechatId();
             });
 
         yield TextField::new('momentId', '动态ID')
@@ -126,7 +121,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('图片URL列表的JSON数据')
             ->formatValue(function ($value) {
-                if ((bool) is_array($value)) {
+                if (is_array($value)) {
                     return '共 ' . count($value) . ' 张图片';
                 }
                 return $value;
@@ -137,7 +132,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('视频信息的JSON数据')
             ->formatValue(function ($value) {
-                if ((bool) is_array($value)) {
+                if (is_array($value)) {
                     return '视频: ' . ($value['title'] ?? '无标题');
                 }
                 return $value;
@@ -148,7 +143,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('链接信息的JSON数据')
             ->formatValue(function ($value) {
-                if ((bool) is_array($value)) {
+                if (is_array($value)) {
                     return '链接: ' . ($value['title'] ?? '无标题');
                 }
                 return $value;
@@ -194,7 +189,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('点赞用户列表的JSON数据')
             ->formatValue(function ($value) {
-                if ((bool) is_array($value)) {
+                if (is_array($value)) {
                     return '共 ' . count($value) . ' 个用户点赞';
                 }
                 return $value;
@@ -205,7 +200,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->hideOnIndex()
             ->setHelp('评论列表的JSON数据')
             ->formatValue(function ($value) {
-                if ((bool) is_array($value)) {
+                if (is_array($value)) {
                     return '共 ' . count($value) . ' 条评论';
                 }
                 return $value;

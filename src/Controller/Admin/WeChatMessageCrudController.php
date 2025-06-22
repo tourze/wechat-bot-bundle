@@ -164,7 +164,7 @@ class WeChatMessageCrudController extends AbstractCrudController
         yield IntegerField::new('mediaFileSize', '文件大小')
             ->setHelp('媒体文件大小（字节）')
             ->formatValue(function ($value) {
-                return $value ? $this->formatFileSize($value) : '-';
+                return $value > 0 ? $this->formatFileSize($value) : '-';
             })
             ->hideOnIndex()
             ->hideOnForm();
