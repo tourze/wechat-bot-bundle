@@ -11,6 +11,7 @@ use Tourze\WechatBotBundle\DTO\WeChatMessageData;
 use Tourze\WechatBotBundle\DTO\WeChatMessageSendResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
+use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
 use Tourze\WechatBotBundle\Repository\WeChatMessageRepository;
 use Tourze\WechatBotBundle\Request\RecallMessageRequest;
 use Tourze\WechatBotBundle\Request\SendFileMessageRequest;
@@ -35,6 +36,7 @@ class WeChatMessageService
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
         private readonly WeChatMessageRepository $messageRepository,
+        private readonly WeChatAccountRepository $accountRepository,
         private readonly LoggerInterface $logger
     ) {}
 
@@ -296,7 +298,7 @@ class WeChatMessageService
                 'direction' => 'outbound'
             ]);
 
-            if (!$message) {
+            if ($message === null) {
                 throw new \RuntimeException('Message not found or not outbound');
             }
 
@@ -340,7 +342,7 @@ class WeChatMessageService
 
             // 查找对应的微信账号
             $account = $this->findAccountByDeviceId($parsedData->deviceId);
-            if (!$account) {
+            if ($account === null) {
                 $this->logger->warning('Account not found for inbound message', [
                     'deviceId' => $parsedData->deviceId
                 ]);
@@ -348,7 +350,7 @@ class WeChatMessageService
             }
 
             // 检查消息是否已存在
-            if ($parsedData->messageId) {
+            if ($parsedData->messageId !== null && $parsedData->messageId !== '') {
                 $existingMessage = $this->messageRepository->findOneBy([
                     'messageId' => $parsedData->messageId,
                     'account' => $account
@@ -421,7 +423,7 @@ class WeChatMessageService
     public function markMultipleAsRead(array $messages): void
     {
         foreach ($messages as $message) {
-            if ((bool) $message instanceof WeChatMessage) {
+            if ($message instanceof WeChatMessage) {
                 $message->markAsRead();
             }
         }
@@ -483,7 +485,7 @@ class WeChatMessageService
             ->setContent($content)
             ->setMediaUrl($mediaUrl)
             ->setMediaFileName($mediaFileName)
-            ->setRawData($response ? json_encode($response) : null);
+            ->setRawData($response !== null ? json_encode($response) : null);
 
         $this->entityManager->persist($message);
         $this->entityManager->flush();
@@ -535,8 +537,7 @@ class WeChatMessageService
      */
     private function findAccountByDeviceId(string $deviceId): ?WeChatAccount
     {
-        return $this->entityManager->getRepository(WeChatAccount::class)
-            ->findOneBy(['deviceId' => $deviceId]);
+        return $this->accountRepository->findOneBy(['deviceId' => $deviceId]);
     }
 
     public function __toString(): string

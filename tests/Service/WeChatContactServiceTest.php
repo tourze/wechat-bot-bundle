@@ -25,8 +25,8 @@ class WeChatContactServiceTest extends TestCase
     private WeChatContactService $service;
     private EntityManagerInterface&MockObject $entityManager;
     private WeChatApiClient&MockObject $apiClient;
-    private WeChatContactRepository&MockObject $contactRepository;
     private LoggerInterface&MockObject $logger;
+    private WeChatContactRepository&MockObject $contactRepository;
 
     /**
      * 测试搜索联系人成功
@@ -104,9 +104,8 @@ class WeChatContactServiceTest extends TestCase
         $account->method('getDeviceId')->willReturn('device123');
 
         $wxId = 'friend123';
-        $v1 = 'v1_value';
-        $v2 = 'v2_value';
-        $message = '你好，我想加你为好友';
+        $verifyMessage = '你好，我想加你为好友';
+        $source = '1';
 
         $mockResponse = [
             'code' => '1000',
@@ -123,7 +122,7 @@ class WeChatContactServiceTest extends TestCase
             ->method('info');
 
         // 执行测试
-        $result = $this->service->addFriend($account, $wxId, $v1, $v2, $message);
+        $result = $this->service->addFriend($account, $wxId, $verifyMessage, $source);
 
         // 验证结果
         $this->assertTrue($result);
@@ -299,13 +298,7 @@ class WeChatContactServiceTest extends TestCase
             ->willReturn($mockResponse);
 
         // 模拟Repository查找不存在的联系人
-        $contactRepository = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $contactRepository->method('findOneBy')->willReturn(null);
-
-        $this->entityManager
-            ->expects($this->any())
-            ->method('getRepository')
-            ->willReturn($contactRepository);
+        $this->contactRepository->method('findOneBy')->willReturn(null);
 
         $this->entityManager
             ->expects($this->exactly(2))
@@ -330,13 +323,14 @@ class WeChatContactServiceTest extends TestCase
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->apiClient = $this->createMock(WeChatApiClient::class);
-        $this->contactRepository = $this->createMock(WeChatContactRepository::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->contactRepository = $this->createMock(WeChatContactRepository::class);
 
         $this->service = new WeChatContactService(
             $this->entityManager,
             $this->apiClient,
-            $this->logger
+            $this->logger,
+            $this->contactRepository
         );
     }
 }

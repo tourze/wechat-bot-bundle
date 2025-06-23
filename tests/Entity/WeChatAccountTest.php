@@ -220,8 +220,13 @@ class WeChatAccountTest extends TestCase
         $lastActiveTime = $account->getLastActiveTime();
 
         $this->assertNotNull($lastActiveTime);
-        $this->assertGreaterThanOrEqual($beforeUpdate, \DateTimeImmutable::createFromMutable($lastActiveTime));
-        $this->assertLessThanOrEqual($afterUpdate, \DateTimeImmutable::createFromMutable($lastActiveTime));
+        if ($lastActiveTime instanceof \DateTime) {
+            $lastActiveTimeImmutable = \DateTimeImmutable::createFromMutable($lastActiveTime);
+        } else {
+            $lastActiveTimeImmutable = $lastActiveTime;
+        }
+        $this->assertGreaterThanOrEqual($beforeUpdate, $lastActiveTimeImmutable);
+        $this->assertLessThanOrEqual($afterUpdate, $lastActiveTimeImmutable);
     }
 
     public function test_timeProperties_canBeSetAndRetrieved(): void

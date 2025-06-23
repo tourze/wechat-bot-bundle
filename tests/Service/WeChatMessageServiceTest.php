@@ -13,6 +13,7 @@ use Tourze\WechatBotBundle\DTO\WeChatMessageSendResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
+use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
 use Tourze\WechatBotBundle\Repository\WeChatMessageRepository;
 use Tourze\WechatBotBundle\Service\WeChatMessageService;
 
@@ -25,6 +26,7 @@ class WeChatMessageServiceTest extends TestCase
     private EntityManagerInterface&MockObject $entityManager;
     private WeChatApiClient&MockObject $apiClient;
     private WeChatMessageRepository&MockObject $messageRepository;
+    private WeChatAccountRepository&MockObject $accountRepository;
     private LoggerInterface&MockObject $logger;
 
     /**
@@ -316,14 +318,12 @@ class WeChatMessageServiceTest extends TestCase
         $account = $this->createMock(WeChatAccount::class);
         $account->method('getId')->willReturn(1);
 
-        // 模拟Repository
-        $accountRepository = $this->createMock(\Doctrine\ORM\EntityRepository::class);
-        $accountRepository->method('findOneBy')->willReturn($account);
-
-        $this->entityManager
+        // 模拟 accountRepository
+        $this->accountRepository
             ->expects($this->once())
-            ->method('getRepository')
-            ->willReturn($accountRepository);
+            ->method('findOneBy')
+            ->with(['deviceId' => 'device123'])
+            ->willReturn($account);
 
         // 模拟消息不存在（第一次查找）
         $this->messageRepository
@@ -456,12 +456,14 @@ class WeChatMessageServiceTest extends TestCase
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->apiClient = $this->createMock(WeChatApiClient::class);
         $this->messageRepository = $this->createMock(WeChatMessageRepository::class);
+        $this->accountRepository = $this->createMock(WeChatAccountRepository::class);
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->service = new WeChatMessageService(
             $this->entityManager,
             $this->apiClient,
             $this->messageRepository,
+            $this->accountRepository,
             $this->logger
         );
     }

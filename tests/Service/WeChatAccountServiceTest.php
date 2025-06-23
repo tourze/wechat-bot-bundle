@@ -8,14 +8,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\String\Slugger\SluggerInterface;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\DTO\WeChatDeviceStatus;
 use Tourze\WechatBotBundle\DTO\WeChatLoginResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
-use Tourze\WechatBotBundle\Repository\WeChatApiAccountRepository;
 use Tourze\WechatBotBundle\Service\WeChatAccountService;
 
 /**
@@ -27,8 +25,6 @@ class WeChatAccountServiceTest extends TestCase
     private EntityManagerInterface&MockObject $entityManager;
     private WeChatApiClient&MockObject $apiClient;
     private WeChatAccountRepository&MockObject $accountRepository;
-    private WeChatApiAccountRepository&MockObject $apiAccountRepository;
-    private SluggerInterface&MockObject $slugger;
     private LoggerInterface&MockObject $logger;
 
     /**
@@ -405,16 +401,12 @@ class WeChatAccountServiceTest extends TestCase
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->apiClient = $this->createMock(WeChatApiClient::class);
         $this->accountRepository = $this->createMock(WeChatAccountRepository::class);
-        $this->apiAccountRepository = $this->createMock(WeChatApiAccountRepository::class);
-        $this->slugger = $this->createMock(SluggerInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->service = new WeChatAccountService(
             $this->entityManager,
             $this->apiClient,
             $this->accountRepository,
-            $this->apiAccountRepository,
-            $this->slugger,
             $this->logger
         );
     }

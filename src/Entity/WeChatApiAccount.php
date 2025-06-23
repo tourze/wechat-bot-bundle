@@ -412,7 +412,7 @@ class WeChatApiAccount implements \Stringable
      */
     public function isTokenExpired(): bool
     {
-        if (!$this->tokenExpiresTime) {
+        if ($this->tokenExpiresTime === null) {
             return false;
         }
 

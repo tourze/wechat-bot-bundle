@@ -6,14 +6,12 @@ namespace Tourze\WechatBotBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\String\Slugger\SluggerInterface;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\DTO\WeChatDeviceStatus;
 use Tourze\WechatBotBundle\DTO\WeChatLoginResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
-use Tourze\WechatBotBundle\Repository\WeChatApiAccountRepository;
 use Tourze\WechatBotBundle\Request\CheckOnlineStatusRequest;
 use Tourze\WechatBotBundle\Request\ConfirmLoginRequest;
 use Tourze\WechatBotBundle\Request\CreateDeviceRequest;
@@ -39,8 +37,6 @@ class WeChatAccountService
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
         private readonly WeChatAccountRepository $accountRepository,
-        private readonly WeChatApiAccountRepository $apiAccountRepository,
-        private readonly SluggerInterface $slugger,
         private readonly LoggerInterface $logger
     ) {}
 

@@ -124,13 +124,13 @@ class CheckOnlineStatusCommand extends Command
         $accountId = $input->getOption('account-id');
         $onlyOnline = $input->getOption('only-online');
 
-        if ($accountId) {
+        if ($accountId !== null) {
             // 检查指定账号
             $account = $this->accountRepository->find($accountId);
             return $account !== null ? [$account] : [];
         }
 
-        if ($onlyOnline) {
+        if ($onlyOnline === true) {
             // 只检查在线账号
             return $this->accountRepository->findBy(['status' => 'online']);
         }

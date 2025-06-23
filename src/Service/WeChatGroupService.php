@@ -12,6 +12,7 @@ use Tourze\WechatBotBundle\DTO\GroupDetailResult;
 use Tourze\WechatBotBundle\DTO\GroupMemberInfo;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatGroup;
+use Tourze\WechatBotBundle\Repository\WeChatGroupRepository;
 use Tourze\WechatBotBundle\Request\CreateGroupRequest;
 use Tourze\WechatBotBundle\Request\GetFriendsAndGroupsRequest;
 use Tourze\WechatBotBundle\Request\Group\AcceptGroupInviteRequest;
@@ -40,7 +41,8 @@ class WeChatGroupService
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly WeChatGroupRepository $groupRepository
     ) {}
 
     /**
@@ -180,8 +182,7 @@ class WeChatGroupService
             $this->apiClient->request($request);
 
             // 删除本地群组记录
-            $group = $this->entityManager->getRepository(WeChatGroup::class)
-                ->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
+            $group = $this->groupRepository->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
 
             if ((bool) $group) {
                 $this->entityManager->remove($group);
@@ -214,7 +215,7 @@ class WeChatGroupService
             $this->apiClient->request($request);
 
             // 更新本地群组记录
-            $group = $this->entityManager->getRepository(WeChatGroup::class)
+            $group = $this->groupRepository
                 ->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
 
             if ((bool) $group) {
@@ -250,7 +251,7 @@ class WeChatGroupService
             $this->apiClient->request($request);
 
             // 更新本地群组记录
-            $group = $this->entityManager->getRepository(WeChatGroup::class)
+            $group = $this->groupRepository
                 ->findOneBy(['account' => $account, 'groupId' => $groupWxid]);
 
             if ((bool) $group) {
@@ -592,10 +593,10 @@ class WeChatGroupService
                     continue;
                 }
 
-                $group = $this->entityManager->getRepository(WeChatGroup::class)
+                $group = $this->groupRepository
                     ->findOneBy(['account' => $account, 'groupId' => $wxid]);
 
-                if (!$group) {
+                if ($group === null) {
                     $group = new WeChatGroup();
                     $group->setAccount($account);
                     $group->setGroupId($wxid);
@@ -634,7 +635,7 @@ class WeChatGroupService
      */
     public function getLocalGroup(WeChatAccount $account, string $wxid): ?WeChatGroup
     {
-        return $this->entityManager->getRepository(WeChatGroup::class)
+        return $this->groupRepository
             ->findOneBy(['account' => $account, 'groupId' => $wxid]);
     }
 
@@ -643,7 +644,7 @@ class WeChatGroupService
      */
     public function getAllGroups(WeChatAccount $account): array
     {
-        return $this->entityManager->getRepository(WeChatGroup::class)
+        return $this->groupRepository
             ->findBy(['account' => $account]);
     }
 

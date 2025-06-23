@@ -23,8 +23,8 @@ class WeChatGroupServiceTest extends TestCase
     private WeChatGroupService $service;
     private EntityManagerInterface&MockObject $entityManager;
     private WeChatApiClient&MockObject $apiClient;
-    private WeChatGroupRepository&MockObject $groupRepository;
     private LoggerInterface&MockObject $logger;
+    private WeChatGroupRepository&MockObject $groupRepository;
 
     /**
      * 测试创建微信群
@@ -153,16 +153,10 @@ class WeChatGroupServiceTest extends TestCase
         // 更新本地群信息
         $group = $this->createMock(WeChatGroup::class);
 
-        $groupRepository = $this->createMock(WeChatGroupRepository::class);
-        $groupRepository
+        $this->groupRepository
             ->expects($this->once())
             ->method('findOneBy')
             ->willReturn($group);
-
-        $this->entityManager
-            ->expects($this->once())
-            ->method('getRepository')
-            ->willReturn($groupRepository);
 
         $group
             ->expects($this->once())
@@ -233,16 +227,10 @@ class WeChatGroupServiceTest extends TestCase
         // 删除本地群组记录
         $group = $this->createMock(WeChatGroup::class);
 
-        $groupRepository = $this->createMock(WeChatGroupRepository::class);
-        $groupRepository
+        $this->groupRepository
             ->expects($this->once())
             ->method('findOneBy')
             ->willReturn($group);
-
-        $this->entityManager
-            ->expects($this->once())
-            ->method('getRepository')
-            ->willReturn($groupRepository);
 
         $this->entityManager
             ->expects($this->once())
@@ -392,16 +380,10 @@ class WeChatGroupServiceTest extends TestCase
             ->method('request')
             ->willReturn($mockResponse);
 
-        $groupRepository = $this->createMock(WeChatGroupRepository::class);
-        $groupRepository
+        $this->groupRepository
             ->expects($this->exactly(2))
             ->method('findOneBy')
             ->willReturn(null);
-
-        $this->entityManager
-            ->expects($this->exactly(2))
-            ->method('getRepository')
-            ->willReturn($groupRepository);
 
         $this->entityManager
             ->expects($this->exactly(2))
@@ -427,13 +409,14 @@ class WeChatGroupServiceTest extends TestCase
     {
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->apiClient = $this->createMock(WeChatApiClient::class);
-        $this->groupRepository = $this->createMock(WeChatGroupRepository::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+        $this->groupRepository = $this->createMock(WeChatGroupRepository::class);
 
         $this->service = new WeChatGroupService(
             $this->entityManager,
             $this->apiClient,
-            $this->logger
+            $this->logger,
+            $this->groupRepository
         );
     }
 }

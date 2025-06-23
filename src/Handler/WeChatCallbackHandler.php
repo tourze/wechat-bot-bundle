@@ -8,8 +8,9 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
-use Tourze\WechatBotBundle\Service\WeChatAccountService;
+use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
 use Tourze\WechatBotBundle\Service\WeChatMessageService;
 
 /**
@@ -28,8 +29,8 @@ class WeChatCallbackHandler
 {
     public function __construct(
         private readonly WeChatMessageService $messageService,
-        private readonly WeChatAccountService $accountService,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly WeChatAccountRepository $accountRepository
     ) {}
 
     /**
@@ -50,7 +51,7 @@ class WeChatCallbackHandler
             }
 
             $data = json_decode($content, true);
-            if ((bool) json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== 0) {
                 return new JsonResponse(['error' => 'Invalid JSON'], 400);
             }
 
@@ -114,7 +115,7 @@ class WeChatCallbackHandler
             // 处理接收到的消息
             $message = $this->messageService->processInboundMessage($data);
 
-            if (!$message) {
+            if ($message === null) {
                 $this->logger->warning('Failed to process inbound message', ['data' => $data]);
                 return false;
             }
@@ -152,7 +153,7 @@ class WeChatCallbackHandler
 
             // 更新账号登录状态
             $account = $this->findAccountByDeviceId($deviceId);
-            if (!$account) {
+            if ($account === null) {
                 $this->logger->warning('Account not found for login callback', [
                     'deviceId' => $deviceId
                 ]);
@@ -209,7 +210,7 @@ class WeChatCallbackHandler
             }
 
             $account = $this->findAccountByDeviceId($deviceId);
-            if (!$account) {
+            if ($account === null) {
                 return false;
             }
 
@@ -322,13 +323,13 @@ class WeChatCallbackHandler
             }
 
             $content = $message->getContent();
-            if (!$content) {
+            if ($content === null || $content === '') {
                 return;
             }
 
             // 简单的自动回复逻辑示例
             $autoReply = $this->generateAutoReply($content);
-            if (!$autoReply) {
+            if ($autoReply === null || $autoReply === '') {
                 return;
             }
 
@@ -389,11 +390,9 @@ class WeChatCallbackHandler
     /**
      * 根据设备ID查找账号
      */
-    private function findAccountByDeviceId(string $deviceId): ?\Tourze\WechatBotBundle\Entity\WeChatAccount
+    private function findAccountByDeviceId(string $deviceId): ?WeChatAccount
     {
-        // 这里应该使用Repository，但为了简化先直接返回null
-        // 实际使用时需要注入AccountRepository
-        return null;
+        return $this->accountRepository->findOneBy(['deviceId' => $deviceId]);
     }
 
     public function __toString(): string

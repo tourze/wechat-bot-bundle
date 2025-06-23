@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\DTO\FileDownloadResult;
@@ -23,7 +22,6 @@ use Tourze\WechatBotBundle\Request\Upload\UploadImageToCdnRequest;
 class WeChatFileService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
         private readonly LoggerInterface $logger,
         private readonly string $fileStoragePath = '/tmp/wechat_files'
@@ -100,7 +98,7 @@ class WeChatFileService
         $timestamp = time();
         $random = substr(md5(uniqid()), 0, 8);
 
-        return "{$type}_{$timestamp}_{$random}" . ($extension ? ".{$extension}" : '');
+        return "{$type}_{$timestamp}_{$random}" . ($extension !== '' ? ".{$extension}" : '');
     }
 
     /**

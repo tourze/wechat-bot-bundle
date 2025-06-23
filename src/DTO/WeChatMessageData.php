@@ -51,7 +51,7 @@ readonly class WeChatMessageData implements \Stringable
 
     public function getDisplayContent(): string
     {
-        if ($this->content) {
+        if ($this->content !== null && $this->content !== '') {
             return mb_substr($this->content, 0, 100);
         }
 
@@ -59,7 +59,7 @@ readonly class WeChatMessageData implements \Stringable
             'image' => '[图片]',
             'voice' => '[语音]',
             'video' => '[视频]',
-            'file' => '[文件]' . ($this->mediaFileName ? ': ' . $this->mediaFileName : ''),
+            'file' => '[文件]' . ($this->mediaFileName !== null && $this->mediaFileName !== '' ? ': ' . $this->mediaFileName : ''),
             'link' => '[链接]',
             'card' => '[名片]',
             'emoji' => '[表情]',

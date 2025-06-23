@@ -75,7 +75,7 @@ class SyncGroupsCommand extends Command
         $io->title('微信群组同步');
 
         try {
-            if ($accountId) {
+            if ($accountId !== null) {
                 // 同步指定账号
                 $account = $this->accountRepository->find($accountId);
                 if ($account === null) {

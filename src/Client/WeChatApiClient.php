@@ -30,9 +30,7 @@ class WeChatApiClient extends ApiClient
             $apiAccount->markAsConnected();
             return true;
         } catch (\Exception $e) {
-            if ($request instanceof WeChatRequestInterface) {
-                $request->getApiAccount()->markAsError();
-            }
+            $request->getApiAccount()->markAsError();
             return false;
         }
     }

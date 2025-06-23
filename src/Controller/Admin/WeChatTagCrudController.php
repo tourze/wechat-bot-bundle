@@ -2,7 +2,6 @@
 
 namespace Tourze\WechatBotBundle\Controller\Admin;
 
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -23,14 +22,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\HttpFoundation\Response;
 use Tourze\WechatBotBundle\Entity\WeChatTag;
-use Tourze\WechatBotBundle\Service\WeChatTagService;
 
 class WeChatTagCrudController extends AbstractCrudController
 {
-    public function __construct(
-        private readonly WeChatTagService $tagService,
-        private readonly EntityManagerInterface $entityManager
-    ) {}
 
     public static function getEntityFqcn(): string
     {

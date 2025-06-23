@@ -442,13 +442,13 @@ class WeChatMessage implements \Stringable
 
     public function getDisplayContent(): string
     {
-        if ($this->isTextMessage() && $this->content) {
+        if ($this->isTextMessage() && $this->content !== null && $this->content !== '') {
             return mb_strlen($this->content) > 50
                 ? mb_substr($this->content, 0, 50) . '...'
                 : $this->content;
         }
 
-        if ($this->isMediaMessage() && $this->mediaFileName) {
+        if ($this->isMediaMessage() && $this->mediaFileName !== null && $this->mediaFileName !== '') {
             return "[{$this->messageType}] {$this->mediaFileName}";
         }
 

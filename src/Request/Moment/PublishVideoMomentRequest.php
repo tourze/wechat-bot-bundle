@@ -88,7 +88,7 @@ class PublishVideoMomentRequest extends ApiRequest implements WeChatRequestInter
             ],
         ];
 
-        if ($this->thumbPath) {
+        if ($this->thumbPath !== '') {
             $multipart[] = [
                 'name' => 'thumb',
                 'contents' => fopen($this->thumbPath, 'r'),

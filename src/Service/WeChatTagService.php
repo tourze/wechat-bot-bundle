@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatContact;
+use Tourze\WechatBotBundle\Repository\WeChatContactRepository;
 use Tourze\WechatBotBundle\Request\Tag\CreateFriendTagRequest;
 use Tourze\WechatBotBundle\Request\Tag\DeleteFriendTagRequest;
 use Tourze\WechatBotBundle\Request\Tag\GetTagListRequest;
@@ -24,7 +25,8 @@ class WeChatTagService
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly WeChatContactRepository $contactRepository
     ) {}
 
     /**
@@ -270,8 +272,7 @@ class WeChatTagService
     public function getContactsByTag(WeChatAccount $account, string $tagId): array
     {
         try {
-            $contacts = $this->entityManager->getRepository(WeChatContact::class)
-                ->createQueryBuilder('c')
+            $contacts = $this->contactRepository->createQueryBuilder('c')
                 ->where('c.account = :account')
                 ->andWhere('c.tags LIKE :tag')
                 ->setParameter('account', $account)

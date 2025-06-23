@@ -11,6 +11,7 @@ use Tourze\WechatBotBundle\DTO\ContactInfoResult;
 use Tourze\WechatBotBundle\DTO\ContactSearchResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatContact;
+use Tourze\WechatBotBundle\Repository\WeChatContactRepository;
 use Tourze\WechatBotBundle\Request\AcceptFriendRequest;
 use Tourze\WechatBotBundle\Request\Friend\AddFriendRequest;
 use Tourze\WechatBotBundle\Request\Friend\DeleteFriendRequest;
@@ -31,7 +32,8 @@ class WeChatContactService
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly WeChatContactRepository $contactRepository
     ) {}
 
     /**
@@ -277,13 +279,12 @@ class WeChatContactService
                     continue;
                 }
 
-                $contact = $this->entityManager->getRepository(WeChatContact::class)
-                    ->findOneBy([
+                $contact = $this->contactRepository->findOneBy([
                         'account' => $account,
                         'contactId' => $contactId
                     ]);
 
-                if (!$contact) {
+                if ($contact === null) {
                     $contact = new WeChatContact();
                     $contact->setAccount($account);
                     $contact->setContactId($contactId);
@@ -347,8 +348,7 @@ class WeChatContactService
      */
     public function getLocalContact(WeChatAccount $account, string $wxid): ?WeChatContact
     {
-        return $this->entityManager->getRepository(WeChatContact::class)
-            ->findOneBy(['account' => $account, 'contactId' => $wxid]);
+        return $this->contactRepository->findOneBy(['account' => $account, 'contactId' => $wxid]);
     }
 
     /**
@@ -356,8 +356,7 @@ class WeChatContactService
      */
     public function getAllFriends(WeChatAccount $account): array
     {
-        return $this->entityManager->getRepository(WeChatContact::class)
-            ->findBy(['account' => $account, 'isFriend' => true, 'isGroup' => false]);
+        return $this->contactRepository->findBy(['account' => $account, 'isFriend' => true, 'isGroup' => false]);
     }
 
     /**

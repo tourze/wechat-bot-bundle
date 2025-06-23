@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\DTO\MomentInfo;
@@ -35,7 +34,6 @@ use Tourze\WechatBotBundle\Request\Moment\UploadMomentImageRequest;
 class WeChatMomentService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
         private readonly WeChatApiClient $apiClient,
         private readonly LoggerInterface $logger
     ) {}

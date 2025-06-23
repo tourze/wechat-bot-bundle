@@ -174,7 +174,7 @@ class WeChatTag implements \Stringable
     public function setFriendList(?array $friendList): static
     {
         $this->friendList = $friendList;
-        $this->friendCount = $friendList ? count($friendList) : 0;
+        $this->friendCount = $friendList !== null ? count($friendList) : 0;
         return $this;
     }
 
