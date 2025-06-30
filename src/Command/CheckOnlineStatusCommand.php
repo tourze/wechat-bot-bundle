@@ -17,13 +17,13 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
 
 /**
  * 检查微信账号在线状态命令
- * 
+ *
  * 定期检查所有微信账号的在线状态，用于：
  * - 及时发现掉线账号
  * - 更新账号状态信息
  * - 记录在线状态变化日志
  * - 发送状态变化通知
- * 
+ *
  * @author AI Assistant
  */
 #[AsCommand(
@@ -152,7 +152,7 @@ class CheckOnlineStatusCommand extends Command
             $io->writeln(sprintf(
                 '检查账号 [%d] %s (设备ID: %s, 当前状态: %s)',
                 $accountId,
-                $account->getWechatId() ?: '未登录',
+                $account->getWechatId() ?? '未登录',
                 $deviceId,
                 $previousStatus
             ));

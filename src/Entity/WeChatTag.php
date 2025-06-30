@@ -226,14 +226,14 @@ class WeChatTag implements \Stringable
     {
         return sprintf(
             '%s (%d人)',
-            $this->tagName ?: $this->tagId,
+            $this->tagName ?? $this->tagId,
             $this->friendCount
         );
     }
 
     public function addFriend(string $wxid): static
     {
-        $friendList = $this->friendList ?: [];
+        $friendList = $this->friendList ?? [];
         if (!in_array($wxid, $friendList, true)) {
             $friendList[] = $wxid;
             $this->setFriendList($friendList);
@@ -243,7 +243,7 @@ class WeChatTag implements \Stringable
 
     public function removeFriend(string $wxid): static
     {
-        $friendList = $this->friendList ?: [];
+        $friendList = $this->friendList ?? [];
         $key = array_search($wxid, $friendList, true);
         if ($key !== false) {
             unset($friendList[$key]);
@@ -254,7 +254,7 @@ class WeChatTag implements \Stringable
 
     public function hasFriend(string $wxid): bool
     {
-        $friendList = $this->friendList ?: [];
+        $friendList = $this->friendList ?? [];
         return in_array($wxid, $friendList, true);
     }
 

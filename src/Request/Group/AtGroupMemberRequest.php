@@ -10,14 +10,14 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 
 /**
  * 群聊@他人请求
- * 
+ *
  * 在群聊中@指定成员，支持：
  * - @单个成员
  * - @多个成员
  * - @所有人
- * 
+ *
  * 接口文档: 社群助手API/群操作相关API/群聊@他人.md
- * 
+ *
  * @author AI Assistant
  */
 class AtGroupMemberRequest extends ApiRequest implements WeChatRequestInterface

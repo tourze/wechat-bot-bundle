@@ -68,7 +68,7 @@ class UploadMomentImageFileRequest extends ApiRequest implements WeChatRequestIn
                 [
                     'name' => 'file',
                     'contents' => fopen($this->filePath, 'r'),
-                    'filename' => $this->fileName ?: basename($this->filePath),
+                    'filename' => $this->fileName !== '' ? $this->fileName : basename($this->filePath),
                 ],
             ],
         ];

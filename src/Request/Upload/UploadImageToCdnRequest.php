@@ -68,7 +68,7 @@ class UploadImageToCdnRequest extends ApiRequest implements WeChatRequestInterfa
                 [
                     'name' => 'image',
                     'contents' => fopen($this->imagePath, 'r'),
-                    'filename' => $this->fileName ?: basename($this->imagePath),
+                    'filename' => $this->fileName !== '' ? $this->fileName : basename($this->imagePath),
                 ],
             ],
         ];

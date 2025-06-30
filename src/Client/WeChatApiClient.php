@@ -5,6 +5,8 @@ namespace Tourze\WechatBotBundle\Client;
 use HttpClientBundle\Client\ApiClient;
 use HttpClientBundle\Request\RequestInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
+use Tourze\WechatBotBundle\Exception\ApiException;
+use Tourze\WechatBotBundle\Exception\InvalidResponseException;
 use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 
 /**
@@ -47,12 +49,12 @@ class WeChatApiClient extends ApiClient
         if ($request instanceof WeChatRequestInterface) {
             $baseUrl = $request->getApiAccount()->getBaseUrl();
             if (empty($baseUrl)) {
-                throw new \RuntimeException('微信API基础URL未设置');
+                throw new ApiException('微信API基础URL未设置');
             }
             return "{$baseUrl}/{$path}";
         }
 
-        throw new \RuntimeException('无法确定API基础URL');
+        throw new ApiException('无法确定API基础URL');
     }
 
     protected function getRequestMethod(RequestInterface $request): string
@@ -92,7 +94,7 @@ class WeChatApiClient extends ApiClient
         $data = json_decode($content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('响应不是有效的JSON格式: ' . json_last_error_msg());
+            throw new InvalidResponseException('响应不是有效的JSON格式: ' . json_last_error_msg());
         }
 
         // 如果是微信请求，更新API调用统计
@@ -113,7 +115,7 @@ class WeChatApiClient extends ApiClient
                 }
             }
 
-            throw new \RuntimeException("API错误 [{$data['code']}]: {$message}");
+            throw new ApiException("API错误 [{$data['code']}]: {$message}");
         }
 
         // 返回完整的响应数据，让业务层决定如何处理

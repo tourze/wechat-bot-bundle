@@ -124,7 +124,7 @@ class WeChatFileService
                 $cdnUrl,
                 $imageId,
                 basename($imageFilePath),
-                filesize($imageFilePath) ?: 0
+                filesize($imageFilePath) === false ? 0 : filesize($imageFilePath)
             );
         } catch (\Exception $e) {
             $this->logger->error('上传图片到CDN异常', [
@@ -146,7 +146,10 @@ class WeChatFileService
         }
 
         $size = filesize($filePath);
-        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+        $mimeType = mime_content_type($filePath);
+        if ($mimeType === false) {
+            $mimeType = 'application/octet-stream';
+        }
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
         $fileName = basename($filePath);
         $modifyTime = filemtime($filePath);
@@ -154,10 +157,10 @@ class WeChatFileService
         return new FileInfo(
             $filePath,
             $fileName,
-            $size ?: 0,
+            $size === false ? 0 : $size,
             $mimeType,
             $extension,
-            $modifyTime ?: 0
+            $modifyTime === false ? 0 : $modifyTime
         );
     }
 

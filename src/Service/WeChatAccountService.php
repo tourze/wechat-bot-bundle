@@ -11,6 +11,8 @@ use Tourze\WechatBotBundle\DTO\WeChatDeviceStatus;
 use Tourze\WechatBotBundle\DTO\WeChatLoginResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
+use Tourze\WechatBotBundle\Exception\InvalidArgumentException;
+use Tourze\WechatBotBundle\Exception\LoginException;
 use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
 use Tourze\WechatBotBundle\Request\CheckOnlineStatusRequest;
 use Tourze\WechatBotBundle\Request\ConfirmLoginRequest;
@@ -64,7 +66,7 @@ class WeChatAccountService
             $qrCodeResponse = $this->apiClient->request($qrCodeRequest);
 
             if (!isset($qrCodeResponse['data']['qrCodeUrl'])) {
-                throw new \RuntimeException('Failed to get QR code URL');
+                throw new LoginException('Failed to get QR code URL');
             }
 
             // 更新账号信息
@@ -132,7 +134,7 @@ class WeChatAccountService
             $qrCodeResponse = $this->apiClient->request($qrCodeRequest);
 
             if (!isset($qrCodeResponse['data']['qrCodeUrl'])) {
-                throw new \RuntimeException('Failed to get QR code URL');
+                throw new LoginException('Failed to get QR code URL');
             }
 
             // 4. 创建账号记录
@@ -331,7 +333,7 @@ class WeChatAccountService
             // 解析代理格式：host:port:username:password
             $proxyParts = explode(':', $proxy);
             if ((bool) count($proxyParts) < 2) {
-                throw new \InvalidArgumentException('Invalid proxy format, expected: host:port[:username:password]');
+                throw new InvalidArgumentException('Invalid proxy format, expected: host:port[:username:password]');
             }
 
             $proxyIp = $proxyParts[0] . ':' . $proxyParts[1];

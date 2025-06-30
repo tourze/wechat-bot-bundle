@@ -6,9 +6,9 @@ namespace Tourze\WechatBotBundle\Service;
 
 /**
  * 微信机器人Bundle管理菜单服务
- * 
+ *
  * 为EasyAdmin提供微信机器人相关的管理菜单配置
- * 
+ *
  * @author AI Assistant
  */
 class AdminMenu

@@ -410,10 +410,10 @@ class WeChatMoment implements \Stringable
 
     public function __toString(): string
     {
-        $content = $this->textContent ?: '【' . $this->momentType . '】';
+        $content = $this->textContent ?? '【' . $this->momentType . '】';
         return sprintf(
             '%s: %s',
-            $this->authorNickname ?: $this->authorWxid,
+            $this->authorNickname ?? $this->authorWxid,
             mb_substr($content, 0, 50) . (mb_strlen($content) > 50 ? '...' : '')
         );
     }

@@ -63,7 +63,7 @@ class WeChatTagCrudController extends AbstractCrudController
             ->setRequired(true)
             ->autocomplete()
             ->formatValue(function ($value, WeChatTag $entity) {
-                return $entity->getAccount()?->getNickname() ?: $entity->getAccount()?->getWechatId();
+                return $entity->getAccount()?->getNickname() ?? $entity->getAccount()?->getWechatId();
             });
 
         yield TextField::new('tagId', '标签ID')

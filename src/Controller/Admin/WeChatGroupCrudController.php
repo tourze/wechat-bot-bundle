@@ -65,7 +65,7 @@ class WeChatGroupCrudController extends AbstractCrudController
             ->setRequired(true)
             ->autocomplete()
             ->formatValue(function ($value, WeChatGroup $entity) {
-                return $entity->getAccount()->getNickname() ?: $entity->getAccount()->getWechatId();
+                return $entity->getAccount()->getNickname() ?? $entity->getAccount()->getWechatId();
             });
 
         yield TextField::new('groupId', '群ID')

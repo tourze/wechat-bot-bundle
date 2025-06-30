@@ -10,14 +10,14 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 
 /**
  * 修改群名请求
- * 
+ *
  * 修改微信群的群名称，需要管理员权限：
  * - 支持修改群名称
  * - 需要群主或管理员权限
  * - 群名长度限制
- * 
+ *
  * 接口文档: 社群助手API/群操作相关API/修改群名.md
- * 
+ *
  * @author AI Assistant
  */
 class UpdateGroupNameRequest extends ApiRequest implements WeChatRequestInterface

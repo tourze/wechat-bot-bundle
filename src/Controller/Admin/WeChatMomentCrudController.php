@@ -73,7 +73,7 @@ class WeChatMomentCrudController extends AbstractCrudController
             ->setRequired(true)
             ->autocomplete()
             ->formatValue(function ($value, WeChatMoment $entity) {
-                return $entity->getAccount()->getNickname() ?: $entity->getAccount()->getWechatId();
+                return $entity->getAccount()->getNickname() ?? $entity->getAccount()->getWechatId();
             });
 
         yield TextField::new('momentId', '动态ID')

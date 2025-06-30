@@ -10,14 +10,14 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 
 /**
  * 下载文件请求
- * 
+ *
  * 下载微信聊天中收到的文件，支持各种文件类型：
  * - 文档文件（PDF、Word、Excel等）
  * - 压缩文件（ZIP、RAR等）
  * - 其他类型文件
- * 
+ *
  * 接口文档: 社群助手API/下载API/下载文件.md
- * 
+ *
  * @author AI Assistant
  */
 class DownloadFileRequest extends ApiRequest implements WeChatRequestInterface

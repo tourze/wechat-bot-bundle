@@ -11,6 +11,7 @@ use Tourze\WechatBotBundle\DTO\WeChatMessageData;
 use Tourze\WechatBotBundle\DTO\WeChatMessageSendResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
+use Tourze\WechatBotBundle\Exception\MessageException;
 use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
 use Tourze\WechatBotBundle\Repository\WeChatMessageRepository;
 use Tourze\WechatBotBundle\Request\RecallMessageRequest;
@@ -299,7 +300,7 @@ class WeChatMessageService
             ]);
 
             if ($message === null) {
-                throw new \RuntimeException('Message not found or not outbound');
+                throw new MessageException('Message not found or not outbound');
             }
 
             $request = new RecallMessageRequest(

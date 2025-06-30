@@ -10,14 +10,14 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 
 /**
  * 设置需要过滤的消息类型请求
- * 
+ *
  * 设置哪些类型的消息不需要接收回调：
  * - 过滤指定消息类型
  * - 减少无用消息回调
  * - 提高处理效率
- * 
+ *
  * 接口文档: 社群助手API/消息接收API/按消息类型过滤消息/设置需要过滤的消息类型.md
- * 
+ *
  * @author AI Assistant
  */
 class SetMessageFilterRequest extends ApiRequest implements WeChatRequestInterface

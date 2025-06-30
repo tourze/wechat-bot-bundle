@@ -76,7 +76,7 @@ class WeChatMessageCrudController extends AbstractCrudController
             ->setRequired(true)
             ->setHelp('选择对应的微信账号')
             ->formatValue(function ($value) {
-                return $value ? ($value->getNickname() ?: $value->getDeviceId()) : '-';
+                return $value ? ($value->getNickname() ?? $value->getDeviceId()) : '-';
             });
 
         yield TextField::new('messageId', '消息ID')
