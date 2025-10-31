@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tourze\WechatBotBundle\Command;
 
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -19,10 +22,23 @@ use Tourze\WechatBotBundle\Service\WeChatGroupService;
  * 同步微信群组命令
  * 用于定时同步所有在线微信账号的群组信息
  */
-#[AsCommand(
-    name: self::NAME,
-    description: '同步微信群组信息'
-)]
+#[AsCommand(name: self::NAME, description: '同步微信群组信息', help: <<<'TXT'
+
+    此命令用于同步微信群组信息。支持以下功能：
+    - 同步所有在线账号的群组信息
+    - 指定特定账号进行同步
+    - 批量处理和请求限流
+    - 同步群成员信息
+
+    使用示例：
+      php bin/console wechat:sync-groups                      # 同步所有在线账号
+      php bin/console wechat:sync-groups 123                 # 同步指定账号
+      php bin/console wechat:sync-groups --force             # 强制同步所有账号
+      php bin/console wechat:sync-groups --sync-members      # 同时同步群成员
+      php bin/console wechat:sync-groups --batch-size=5      # 设置批次大小
+
+    TXT)]
+#[WithMonologChannel(channel: 'wechat_bot')]
 class SyncGroupsCommand extends Command
 {
     public const NAME = 'wechat:sync-groups';
@@ -45,110 +61,95 @@ class SyncGroupsCommand extends Command
             ->addOption('batch-size', 'b', InputOption::VALUE_REQUIRED, '批次大小', 10)
             ->addOption('delay', 'd', InputOption::VALUE_REQUIRED, '请求间隔（秒）', 1)
             ->addOption('sync-members', 'm', InputOption::VALUE_NONE, '同时同步群成员信息')
-            ->setHelp('
-此命令用于同步微信群组信息。支持以下功能：
-- 同步所有在线账号的群组信息
-- 指定特定账号进行同步
-- 批量处理和请求限流
-- 同步群成员信息
-
-使用示例：
-  php bin/console wechat:sync-groups                      # 同步所有在线账号
-  php bin/console wechat:sync-groups 123                 # 同步指定账号
-  php bin/console wechat:sync-groups --force             # 强制同步所有账号
-  php bin/console wechat:sync-groups --sync-members      # 同时同步群成员
-  php bin/console wechat:sync-groups --batch-size=5      # 设置批次大小
-');
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-
         $accountId = $input->getArgument('account-id');
         $force = (bool) $input->getOption('force');
-        $onlyOnline = $input->getOption('only-online');
-        $batchSize = (int) $input->getOption('batch-size');
-        $delay = (int) $input->getOption('delay');
+        $onlyOnlineOption = $input->getOption('only-online');
+        $onlyOnline = is_bool($onlyOnlineOption) ? $onlyOnlineOption : (bool) $onlyOnlineOption;
+        $batchSizeOption = $input->getOption('batch-size');
+        $batchSize = is_int($batchSizeOption) ? $batchSizeOption : (is_string($batchSizeOption) || is_numeric($batchSizeOption) ? (int) $batchSizeOption : 10);
+        $delayOption = $input->getOption('delay');
+        $delay = is_int($delayOption) ? $delayOption : (is_string($delayOption) || is_numeric($delayOption) ? (int) $delayOption : 1);
         $syncMembers = (bool) $input->getOption('sync-members');
 
         $io->title('微信群组同步');
 
         try {
-            if ($accountId !== null) {
-                // 同步指定账号
-                $account = $this->accountRepository->find($accountId);
-                if ($account === null) {
-                    $io->error("未找到ID为 {$accountId} 的微信账号");
-                    return Command::FAILURE;
-                }
+            if (null !== $accountId) {
+                return $this->syncSingleAccountById($io, $accountId, $force, $delay, $syncMembers);
+            }
 
-                return $this->syncSingleAccount($io, $account, $force, $delay, $syncMembers);
-            } else {
-                // 同步多个账号
-                return $this->syncMultipleAccounts($io, $force, $onlyOnline, $batchSize, $delay, $syncMembers);
-            }
+            return $this->syncMultipleAccounts($io, $force, $onlyOnline, $batchSize, $delay, $syncMembers);
         } catch (\Exception $e) {
-            $io->error('同步过程中发生错误：' . $e->getMessage());
-            if ($output->isVerbose()) {
-                $io->writeln($e->getTraceAsString());
-            }
-            return Command::FAILURE;
+            return $this->handleExecuteError($io, $output, $e);
         }
     }
 
-    /**
-     * 同步单个账号的群组
-     */
-    private function syncSingleAccount(
-        SymfonyStyle $io,
-        WeChatAccount $account,
-        bool $force,
-        int $delay,
-        bool $syncMembers
-    ): int {
+    private function syncSingleAccountById(SymfonyStyle $io, mixed $accountId, bool $force, int $delay, bool $syncMembers): int
+    {
+        $account = $this->accountRepository->find($accountId);
+        if (null === $account) {
+            $accountIdStr = is_string($accountId) || is_int($accountId) ? (string) $accountId : 'UNKNOWN';
+            $io->error("未找到ID为 {$accountIdStr} 的微信账号");
+
+            return Command::FAILURE;
+        }
+
+        // 账号已通过 Repository::find() 返回，类型确保正确
+        // $account 已经由 PHPDoc 声明为 WeChatAccount|null，检查 null 后确保类型
+
+        return $this->executeSingleAccountSync($io, $account, $force, $delay, $syncMembers);
+    }
+
+    private function executeSingleAccountSync(SymfonyStyle $io, WeChatAccount $account, bool $force, int $delay, bool $syncMembers): int
+    {
         $io->section("同步账号：{$account->getNickname()} ({$account->getWechatId()})");
 
-        // 检查账号状态
         if (!$force && !$account->isOnline()) {
             $io->warning("账号 {$account->getWechatId()} 当前离线，跳过同步（使用 --force 强制同步）");
+
             return Command::SUCCESS;
         }
 
-        $io->progressStart();
-
         try {
-            // 执行群组同步
             $success = $this->groupService->syncGroups($account);
 
             if ($success && $syncMembers) {
-                $io->writeln("开始同步群成员信息...");
+                $io->writeln('开始同步群成员信息...');
                 $this->syncGroupMembers($account, $delay);
             }
 
-            $io->progressFinish();
             if ($success) {
                 $io->success("账号 {$account->getWechatId()} 群组同步完成");
             } else {
                 $io->warning("账号 {$account->getWechatId()} 群组同步可能有部分失败");
             }
 
-            // 请求间隔
-            if ($delay > 0) {
-                $io->writeln("等待 {$delay} 秒...");
-                sleep($delay);
-            }
-
             return Command::SUCCESS;
         } catch (\Exception $e) {
-            $io->progressFinish();
             $io->error("同步账号 {$account->getWechatId()} 时发生错误：{$e->getMessage()}");
             $this->logger->error('同步群组信息失败', [
                 'account' => $account->getWechatId(),
                 'exception' => $e,
             ]);
+
             return Command::FAILURE;
         }
+    }
+
+    private function handleExecuteError(SymfonyStyle $io, OutputInterface $output, \Exception $e): int
+    {
+        $io->error('同步过程中发生错误：' . $e->getMessage());
+        if ($output->isVerbose()) {
+            $io->writeln($e->getTraceAsString());
+        }
+
+        return Command::FAILURE;
     }
 
     /**
@@ -188,91 +189,167 @@ class SyncGroupsCommand extends Command
         bool $onlyOnline,
         int $batchSize,
         int $delay,
-        bool $syncMembers
+        bool $syncMembers,
     ): int {
-        // 获取要同步的账号列表
-        if ($onlyOnline || !$force) {
-            $accounts = $this->accountRepository->findOnlineAccounts();
-            $io->writeln("找到 " . count($accounts) . " 个在线账号");
-        } else {
-            $accounts = $this->accountRepository->findAllValidAccounts();
-            $io->writeln("找到 " . count($accounts) . " 个有效账号");
-        }
+        $accounts = $this->getAccountsToSync($io, $onlyOnline, $force);
 
-        if (empty($accounts)) {
+        if ([] === $accounts) {
             $io->warning('没有找到可同步的账号');
-            return Command::SUCCESS;
+
+            return Command::FAILURE;
         }
 
         $io->progressStart(count($accounts));
+        $result = $this->syncAccountsInBatches($io, $accounts, $batchSize, $delay, $syncMembers, $force);
+        $io->progressFinish();
 
+        $this->displaySyncResults($io, $result);
+
+        return $result['failureCount'] > 0 ? Command::FAILURE : Command::SUCCESS;
+    }
+
+    /**
+     * @return WeChatAccount[]
+     */
+    private function getAccountsToSync(SymfonyStyle $io, bool $onlyOnline, bool $force): array
+    {
+        if ($onlyOnline || !$force) {
+            $accounts = $this->accountRepository->findOnlineAccounts();
+            $io->writeln('找到 ' . count($accounts) . ' 个在线账号');
+        } else {
+            $accounts = $this->accountRepository->findAllValidAccounts();
+            $io->writeln('找到 ' . count($accounts) . ' 个有效账号');
+        }
+
+        return $accounts;
+    }
+
+    /**
+     * @param WeChatAccount[] $accounts
+     * @return array<string, int>
+     */
+    private function syncAccountsInBatches(
+        SymfonyStyle $io,
+        array $accounts,
+        int $batchSize,
+        int $delay,
+        bool $syncMembers,
+        bool $force,
+    ): array {
         $successCount = 0;
         $failureCount = 0;
-        $batches = array_chunk($accounts, $batchSize);
+        $batches = array_chunk($accounts, max(1, $batchSize));
 
         foreach ($batches as $batchIndex => $batch) {
-            $io->section("处理第 " . ($batchIndex + 1) . " 批账号（共 " . count($batches) . " 批）");
+            $io->section('处理第 ' . ($batchIndex + 1) . ' 批账号（共 ' . count($batches) . ' 批）');
 
-            foreach ($batch as $account) {
-                try {
-                    $io->writeln("同步账号：{$account->getNickname()} ({$account->getWechatId()})");
+            $batchResult = $this->syncAccountBatch($io, $batch, $delay, $syncMembers, $force);
+            $successCount += $batchResult['successCount'];
+            $failureCount += $batchResult['failureCount'];
 
-                    // 检查账号状态
-                    if (!$force && !$account->isOnline()) {
-                        $io->writeln("  账号离线，跳过同步");
-                        $io->progressAdvance();
-                        continue;
-                    }
+            $this->delayBetweenBatches($io, $batchIndex, count($batches), $delay);
+        }
 
-                    // 执行群组同步
-                    $success = $this->groupService->syncGroups($account);
+        return ['successCount' => $successCount, 'failureCount' => $failureCount];
+    }
 
-                    if ($success) {
-                        $io->writeln("  群组同步完成");
+    /**
+     * @param WeChatAccount[] $batch
+     * @return array<string, int>
+     */
+    private function syncAccountBatch(
+        SymfonyStyle $io,
+        array $batch,
+        int $delay,
+        bool $syncMembers,
+        bool $force,
+    ): array {
+        $successCount = 0;
+        $failureCount = 0;
 
-                        if ($syncMembers) {
-                            $io->writeln("  开始同步群成员...");
-                            $this->syncGroupMembers($account, $delay);
-                        }
-
-                        $successCount++;
-                    } else {
-                        $io->writeln("  群组同步可能有部分失败");
-                        $failureCount++;
-                    }
-
-                    // 请求间隔
-                    if ($delay > 0) {
-                        sleep($delay);
-                    }
-                } catch (\Exception $e) {
-                    $io->writeln("  <error>同步失败：{$e->getMessage()}</error>");
-                    $failureCount++;
-                } finally {
-                    $io->progressAdvance();
+        foreach ($batch as $account) {
+            try {
+                $result = $this->syncSingleAccount($io, $account, $syncMembers, $force);
+                if ($result) {
+                    ++$successCount;
+                } else {
+                    ++$failureCount;
                 }
-            }
 
-            // 批次间隔
-            if ($batchIndex < count($batches) - 1 && $delay > 0) {
-                $io->writeln("批次间等待 " . ($delay * 2) . " 秒...");
-                sleep($delay * 2);
+                $this->delayBetweenRequests($delay);
+            } catch (\Exception $e) {
+                $io->writeln("  <error>同步失败：{$e->getMessage()}</error>");
+                ++$failureCount;
+            } finally {
+                $io->progressAdvance();
             }
         }
 
-        $io->progressFinish();
+        return ['successCount' => $successCount, 'failureCount' => $failureCount];
+    }
 
-        // 输出统计结果
+    private function syncSingleAccount(
+        SymfonyStyle $io,
+        WeChatAccount $account,
+        bool $syncMembers,
+        bool $force,
+    ): bool {
+        $io->writeln("同步账号：{$account->getNickname()} ({$account->getWechatId()})");
+
+        // 检查账号状态
+        if (!$force && !$account->isOnline()) {
+            $io->writeln('  账号离线，跳过同步');
+
+            return true; // 跳过不算失败
+        }
+
+        // 执行群组同步
+        $success = $this->groupService->syncGroups($account);
+
+        if ($success) {
+            $io->writeln('  群组同步完成');
+
+            if ($syncMembers) {
+                $io->writeln('  开始同步群成员...');
+                $this->syncGroupMembers($account, 0); // 使用固定延迟
+            }
+        } else {
+            $io->writeln('  群组同步可能有部分失败');
+        }
+
+        return $success;
+    }
+
+    private function delayBetweenRequests(int $delay): void
+    {
+        if ($delay > 0) {
+            sleep($delay);
+        }
+    }
+
+    private function delayBetweenBatches(SymfonyStyle $io, int $batchIndex, int $totalBatches, int $delay): void
+    {
+        if ($batchIndex < $totalBatches - 1 && $delay > 0) {
+            $io->writeln('批次间等待 ' . ($delay * 2) . ' 秒...');
+            sleep($delay * 2);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function displaySyncResults(SymfonyStyle $io, array $result): void
+    {
         $io->section('同步结果统计');
+        $successCount = is_int($result['successCount'] ?? null) ? $result['successCount'] : 0;
+        $failureCount = is_int($result['failureCount'] ?? null) ? $result['failureCount'] : 0;
         $io->writeln("成功同步：{$successCount} 个账号");
         $io->writeln("同步失败：{$failureCount} 个账号");
 
         if ($failureCount > 0) {
-            $io->warning("部分账号同步失败，请检查日志获取详细信息");
+            $io->warning('部分账号同步失败，请检查日志获取详细信息');
         } else {
             $io->success('所有账号同步完成！');
         }
-
-        return $failureCount > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 }

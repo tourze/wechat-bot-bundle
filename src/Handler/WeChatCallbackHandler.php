@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Handler;
 
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,13 +27,16 @@ use Tourze\WechatBotBundle\Service\WeChatMessageService;
  *
  * @author AI Assistant
  */
-class WeChatCallbackHandler
+#[WithMonologChannel(channel: 'wechat_bot')]
+#[Autoconfigure(public: true)]
+readonly class WeChatCallbackHandler
 {
     public function __construct(
-        private readonly WeChatMessageService $messageService,
-        private readonly LoggerInterface $logger,
-        private readonly WeChatAccountRepository $accountRepository
-    ) {}
+        private WeChatMessageService $messageService,
+        private LoggerInterface $logger,
+        private WeChatAccountRepository $accountRepository,
+    ) {
+    }
 
     /**
      * 处理微信消息回调
@@ -46,33 +51,42 @@ class WeChatCallbackHandler
 
             // 获取回调数据
             $content = $request->getContent();
-            if ((bool) empty($content)) {
+            if ('' === $content) {
                 return new JsonResponse(['error' => 'Empty request body'], 400);
             }
 
             $data = json_decode($content, true);
-            if (json_last_error() !== 0) {
+            if (0 !== json_last_error()) {
                 return new JsonResponse(['error' => 'Invalid JSON'], 400);
             }
 
+            // 确保 $data 是数组类型
+            if (!is_array($data)) {
+                return new JsonResponse(['error' => 'Invalid data format'], 400);
+            }
+
+            // 转换为 array<string, mixed> 类型
+            /** @var array<string, mixed> $validatedData */
+            $validatedData = array_filter($data, static fn ($key) => is_string($key), ARRAY_FILTER_USE_KEY);
+
             // 验证必要字段
-            if (!$this->validateCallbackData($data)) {
+            if (!$this->validateCallbackData($validatedData)) {
                 return new JsonResponse(['error' => 'Invalid callback data'], 400);
             }
 
             // 处理不同类型的回调
-            $result = $this->processCallback($data);
+            $result = $this->processCallback($validatedData);
 
-            if ((bool) $result) {
+            if ($result) {
                 return new JsonResponse(['status' => 'success', 'message' => 'Callback processed']);
-            } else {
-                return new JsonResponse(['status' => 'error', 'message' => 'Failed to process callback'], 500);
             }
+
+            return new JsonResponse(['status' => 'error', 'message' => 'Failed to process callback'], 500);
         } catch (\Exception $e) {
             $this->logger->error('Failed to handle WeChat callback', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'request_body' => $request->getContent()
+                'request_body' => $request->getContent(),
             ]);
 
             return new JsonResponse(['error' => 'Internal server error'], 500);
@@ -81,6 +95,9 @@ class WeChatCallbackHandler
 
     /**
      * 处理回调数据
+     */
+    /**
+     * @param array<string, mixed> $data
      */
     private function processCallback(array $data): bool
     {
@@ -94,12 +111,12 @@ class WeChatCallbackHandler
                 'status' => $this->processStatusCallback($data),
                 'friend_request' => $this->processFriendRequestCallback($data),
                 'group_invite' => $this->processGroupInviteCallback($data),
-                default => $this->processUnknownCallback($data)
+                default => $this->processUnknownCallback($data),
             };
         } catch (\Exception $e) {
             $this->logger->error('Failed to process callback', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'data' => $data,
             ]);
 
             return false;
@@ -109,14 +126,18 @@ class WeChatCallbackHandler
     /**
      * 处理消息回调
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function processMessageCallback(array $data): bool
     {
         try {
             // 处理接收到的消息
             $message = $this->messageService->processInboundMessage($data);
 
-            if ($message === null) {
+            if (null === $message) {
                 $this->logger->warning('Failed to process inbound message', ['data' => $data]);
+
                 return false;
             }
 
@@ -126,14 +147,14 @@ class WeChatCallbackHandler
             $this->logger->info('Message callback processed successfully', [
                 'messageId' => $message->getId(),
                 'messageType' => $message->getMessageType(),
-                'senderId' => $message->getSenderId()
+                'senderId' => $message->getSenderId(),
             ]);
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error('Failed to process message callback', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'data' => $data,
             ]);
 
             return false;
@@ -143,55 +164,44 @@ class WeChatCallbackHandler
     /**
      * 处理登录回调
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function processLoginCallback(array $data): bool
     {
         try {
             $deviceId = $data['deviceId'] ?? null;
-            if (!$deviceId) {
+            if (!is_string($deviceId) || '' === $deviceId) {
                 return false;
             }
 
-            // 更新账号登录状态
             $account = $this->findAccountByDeviceId($deviceId);
-            if ($account === null) {
+            if (null === $account) {
                 $this->logger->warning('Account not found for login callback', [
-                    'deviceId' => $deviceId
+                    'deviceId' => $deviceId,
                 ]);
+
                 return false;
             }
 
-            // 根据登录状态更新账号
             $loginStatus = $data['status'] ?? 'unknown';
-
-            if ($loginStatus === 'success' || $loginStatus === 'online') {
-                $account->markAsOnline();
-                if ((bool) isset($data['wxId'])) {
-                    $account->setWechatId($data['wxId']);
-                }
-                if ((bool) isset($data['nickname'])) {
-                    $account->setNickname($data['nickname']);
-                }
-                if ((bool) isset($data['avatar'])) {
-                    $account->setAvatar($data['avatar']);
-                }
-                $account->setLastLoginTime(new \DateTime());
-            } elseif ($loginStatus === 'logout' || $loginStatus === 'offline') {
-                $account->markAsOffline();
+            if (!is_string($loginStatus)) {
+                $loginStatus = 'unknown';
             }
-
+            $this->updateAccountByLoginStatus($account, $loginStatus, $data);
             $account->updateLastActiveTime();
 
             $this->logger->info('Login callback processed', [
                 'accountId' => $account->getId(),
                 'deviceId' => $deviceId,
-                'status' => $loginStatus
+                'status' => $loginStatus,
             ]);
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error('Failed to process login callback', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'data' => $data,
             ]);
 
             return false;
@@ -199,18 +209,84 @@ class WeChatCallbackHandler
     }
 
     /**
+     * 根据登录状态更新账号信息
+     */
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function updateAccountByLoginStatus(WeChatAccount $account, string $loginStatus, array $data): void
+    {
+        if ($this->isOnlineStatus($loginStatus)) {
+            $this->updateAccountAsOnline($account, $data);
+        } elseif ($this->isOfflineStatus($loginStatus)) {
+            $account->markAsOffline();
+        }
+    }
+
+    /**
+     * 检查是否为在线状态
+     */
+    private function isOnlineStatus(string $status): bool
+    {
+        return 'success' === $status || 'online' === $status;
+    }
+
+    /**
+     * 检查是否为离线状态
+     */
+    private function isOfflineStatus(string $status): bool
+    {
+        return 'logout' === $status || 'offline' === $status;
+    }
+
+    /**
+     * 更新账号为在线状态
+     */
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function updateAccountAsOnline(WeChatAccount $account, array $data): void
+    {
+        $account->markAsOnline();
+
+        if (array_key_exists('wxId', $data)) {
+            $wxId = $data['wxId'];
+            if (is_string($wxId)) {
+                $account->setWechatId($wxId);
+            }
+        }
+        if (array_key_exists('nickname', $data)) {
+            $nickname = $data['nickname'];
+            if (is_string($nickname)) {
+                $account->setNickname($nickname);
+            }
+        }
+        if (array_key_exists('avatar', $data)) {
+            $avatar = $data['avatar'];
+            if (is_string($avatar)) {
+                $account->setAvatar($avatar);
+            }
+        }
+
+        $account->setLastLoginTime(new \DateTimeImmutable());
+    }
+
+    /**
      * 处理状态回调
+     */
+    /**
+     * @param array<string, mixed> $data
      */
     private function processStatusCallback(array $data): bool
     {
         try {
             $deviceId = $data['deviceId'] ?? null;
-            if (!$deviceId) {
+            if (!is_string($deviceId) || '' === $deviceId) {
                 return false;
             }
 
             $account = $this->findAccountByDeviceId($deviceId);
-            if ($account === null) {
+            if (null === $account) {
                 return false;
             }
 
@@ -234,14 +310,14 @@ class WeChatCallbackHandler
             $this->logger->info('Status callback processed', [
                 'accountId' => $account->getId(),
                 'deviceId' => $deviceId,
-                'status' => $status
+                'status' => $status,
             ]);
 
             return true;
         } catch (\Exception $e) {
             $this->logger->error('Failed to process status callback', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'data' => $data,
             ]);
 
             return false;
@@ -251,12 +327,15 @@ class WeChatCallbackHandler
     /**
      * 处理好友请求回调
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function processFriendRequestCallback(array $data): bool
     {
         try {
             $this->logger->info('Friend request callback received', [
                 'fromUser' => $data['fromUser'] ?? null,
-                'content' => $data['content'] ?? null
+                'content' => $data['content'] ?? null,
             ]);
 
             // 这里可以添加自动同意好友请求的逻辑
@@ -266,7 +345,7 @@ class WeChatCallbackHandler
         } catch (\Exception $e) {
             $this->logger->error('Failed to process friend request callback', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'data' => $data,
             ]);
 
             return false;
@@ -276,12 +355,15 @@ class WeChatCallbackHandler
     /**
      * 处理群邀请回调
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function processGroupInviteCallback(array $data): bool
     {
         try {
             $this->logger->info('Group invite callback received', [
                 'groupId' => $data['groupId'] ?? null,
-                'inviter' => $data['inviter'] ?? null
+                'inviter' => $data['inviter'] ?? null,
             ]);
 
             // 这里可以添加自动同意群邀请的逻辑
@@ -291,7 +373,7 @@ class WeChatCallbackHandler
         } catch (\Exception $e) {
             $this->logger->error('Failed to process group invite callback', [
                 'error' => $e->getMessage(),
-                'data' => $data
+                'data' => $data,
             ]);
 
             return false;
@@ -301,11 +383,14 @@ class WeChatCallbackHandler
     /**
      * 处理未知类型回调
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function processUnknownCallback(array $data): bool
     {
         $this->logger->warning('Unknown callback type received', [
             'type' => $data['type'] ?? 'unknown',
-            'data' => $data
+            'data' => $data,
         ]);
 
         return true; // 返回true避免重复回调
@@ -313,6 +398,9 @@ class WeChatCallbackHandler
 
     /**
      * 触发自动回复逻辑
+     */
+    /**
+     * @param array<string, mixed> $originalData
      */
     private function triggerAutoReply(WeChatMessage $message, array $originalData): void
     {
@@ -323,13 +411,13 @@ class WeChatCallbackHandler
             }
 
             $content = $message->getContent();
-            if ($content === null || $content === '') {
+            if (null === $content || '' === $content) {
                 return;
             }
 
             // 简单的自动回复逻辑示例
             $autoReply = $this->generateAutoReply($content);
-            if ($autoReply === null || $autoReply === '') {
+            if (null === $autoReply || '' === $autoReply) {
                 return;
             }
 
@@ -344,7 +432,7 @@ class WeChatCallbackHandler
         } catch (\Exception $e) {
             $this->logger->error('Failed to trigger auto reply', [
                 'messageId' => $message->getId(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -361,12 +449,15 @@ class WeChatCallbackHandler
             str_contains($content, 'hello') || str_contains($content, '你好') => '你好！很高兴收到您的消息。',
             str_contains($content, 'help') || str_contains($content, '帮助') => '如需帮助，请联系我们的客服人员。',
             str_contains($content, 'time') || str_contains($content, '时间') => '当前时间：' . date('Y-m-d H:i:s'),
-            default => null
+            default => null,
         };
     }
 
     /**
      * 验证回调数据
+     */
+    /**
+     * @param array<string, mixed> $data
      */
     private function validateCallbackData(array $data): bool
     {
@@ -383,7 +474,7 @@ class WeChatCallbackHandler
             'login', 'status' => true,
             'friend_request' => isset($data['fromUser']),
             'group_invite' => isset($data['groupId']),
-            default => true
+            default => true,
         };
     }
 
@@ -392,7 +483,9 @@ class WeChatCallbackHandler
      */
     private function findAccountByDeviceId(string $deviceId): ?WeChatAccount
     {
-        return $this->accountRepository->findOneBy(['deviceId' => $deviceId]);
+        $account = $this->accountRepository->findOneBy(['deviceId' => $deviceId]);
+
+        return $account instanceof WeChatAccount ? $account : null;
     }
 
     public function __toString(): string

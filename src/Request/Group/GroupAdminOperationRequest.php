@@ -27,8 +27,9 @@ class GroupAdminOperationRequest extends ApiRequest implements WeChatRequestInte
         private readonly string $deviceId,
         private readonly string $groupId,
         private readonly string $memberWxId,
-        private readonly string $operation = 'setAdmin'
-    ) {}
+        private readonly string $operation = 'setAdmin',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

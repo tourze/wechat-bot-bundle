@@ -19,8 +19,9 @@ class InputLoginCodeRequest extends ApiRequest implements WeChatRequestInterface
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly string $code
-    ) {}
+        private readonly string $code,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

@@ -27,8 +27,9 @@ class AtGroupMemberRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $deviceId,
         private readonly string $chatRoomId,
         private readonly string $content,
-        private readonly string $atList
-    ) {}
+        private readonly string $atList,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -80,4 +81,4 @@ class AtGroupMemberRequest extends ApiRequest implements WeChatRequestInterface
     {
         return 'POST';
     }
-} 
+}

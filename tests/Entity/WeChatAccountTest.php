@@ -4,16 +4,48 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Tests\Entity;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 
 /**
  * WeChatAccount 实体单元测试
+ *
+ * @internal
  */
-class WeChatAccountTest extends TestCase
+#[CoversClass(WeChatAccount::class)]
+final class WeChatAccountTest extends AbstractEntityTestCase
 {
-    public function test_constructor_setsDefaultValues(): void
+    protected function createEntity(): object
+    {
+        return new WeChatAccount();
+    }
+
+    /**
+     * 提供 WeChatAccount 实体的属性数据进行自动测试。
+     *
+     * @return iterable<array{string, mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        return [
+            'deviceId' => ['deviceId', 'test_device_123'],
+            'wechatId' => ['wechatId', 'test_wx_123'],
+            'nickname' => ['nickname', 'Test User'],
+            'avatar' => ['avatar', 'http://example.com/avatar.jpg'],
+            'status' => ['status', 'online'],
+            'accessToken' => ['accessToken', 'test_token_123'],
+            'valid' => ['valid', true],
+            'qrCode' => ['qrCode', 'test_qr_code_data'],
+            'qrCodeUrl' => ['qrCodeUrl', 'http://example.com/qrcode.png'],
+            'proxy' => ['proxy', 'http://proxy.example.com:8080'],
+            'remark' => ['remark', 'Test remark'],
+        ];
+    }
+
+    public function testConstructorSetsDefaultValues(): void
     {
         $account = new WeChatAccount();
 
@@ -26,7 +58,7 @@ class WeChatAccountTest extends TestCase
         $this->assertNull($account->getAvatar());
     }
 
-    public function test_settersAndGetters_workCorrectly(): void
+    public function testSettersAndGettersWorkCorrectly(): void
     {
         $account = new WeChatAccount();
         $apiAccount = new WeChatApiAccount();
@@ -89,7 +121,7 @@ class WeChatAccountTest extends TestCase
         $this->assertEquals($remark, $account->getRemark());
     }
 
-    public function test_toString_returnsDeviceIdWhenSet(): void
+    public function testToStringReturnsDeviceIdWhenSet(): void
     {
         $account = new WeChatAccount();
         $deviceId = 'test_device_123';
@@ -98,7 +130,7 @@ class WeChatAccountTest extends TestCase
         $this->assertStringContainsString($deviceId, (string) $account);
     }
 
-    public function test_toString_returnsWechatIdWhenDeviceIdNotSet(): void
+    public function testToStringReturnsWechatIdWhenDeviceIdNotSet(): void
     {
         $account = new WeChatAccount();
         $wechatId = 'test_wx_123';
@@ -107,14 +139,14 @@ class WeChatAccountTest extends TestCase
         $this->assertStringContainsString($wechatId, (string) $account);
     }
 
-    public function test_toString_returnsIdStringWhenBothDeviceIdAndWechatIdNotSet(): void
+    public function testToStringReturnsIdStringWhenBothDeviceIdAndWechatIdNotSet(): void
     {
         $account = new WeChatAccount();
         // 由于没有setId方法，测试ID为null的情况
         $this->assertNotEmpty((string) $account);
     }
 
-    public function test_isOnline_returnsTrueWhenStatusIsOnline(): void
+    public function testIsOnlineReturnsTrueWhenStatusIsOnline(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('online');
@@ -122,7 +154,7 @@ class WeChatAccountTest extends TestCase
         $this->assertTrue($account->isOnline());
     }
 
-    public function test_isOnline_returnsFalseWhenStatusIsNotOnline(): void
+    public function testIsOnlineReturnsFalseWhenStatusIsNotOnline(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('offline');
@@ -130,7 +162,7 @@ class WeChatAccountTest extends TestCase
         $this->assertFalse($account->isOnline());
     }
 
-    public function test_isOffline_returnsTrueWhenStatusIsOffline(): void
+    public function testIsOfflineReturnsTrueWhenStatusIsOffline(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('offline');
@@ -138,7 +170,7 @@ class WeChatAccountTest extends TestCase
         $this->assertTrue($account->isOffline());
     }
 
-    public function test_isOffline_returnsFalseWhenStatusIsNotOffline(): void
+    public function testIsOfflineReturnsFalseWhenStatusIsNotOffline(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('online');
@@ -146,7 +178,7 @@ class WeChatAccountTest extends TestCase
         $this->assertFalse($account->isOffline());
     }
 
-    public function test_isPendingLogin_returnsTrueWhenStatusIsPendingLogin(): void
+    public function testIsPendingLoginReturnsTrueWhenStatusIsPendingLogin(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('pending_login');
@@ -154,7 +186,7 @@ class WeChatAccountTest extends TestCase
         $this->assertTrue($account->isPendingLogin());
     }
 
-    public function test_isPendingLogin_returnsFalseWhenStatusIsNotPendingLogin(): void
+    public function testIsPendingLoginReturnsFalseWhenStatusIsNotPendingLogin(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('online');
@@ -162,7 +194,7 @@ class WeChatAccountTest extends TestCase
         $this->assertFalse($account->isPendingLogin());
     }
 
-    public function test_isExpired_returnsTrueWhenStatusIsExpired(): void
+    public function testIsExpiredReturnsTrueWhenStatusIsExpired(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('expired');
@@ -170,7 +202,7 @@ class WeChatAccountTest extends TestCase
         $this->assertTrue($account->isExpired());
     }
 
-    public function test_isExpired_returnsFalseWhenStatusIsNotExpired(): void
+    public function testIsExpiredReturnsFalseWhenStatusIsNotExpired(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('online');
@@ -178,7 +210,7 @@ class WeChatAccountTest extends TestCase
         $this->assertFalse($account->isExpired());
     }
 
-    public function test_markAsOnline_setsStatusToOnlineAndUpdatesLastLoginTime(): void
+    public function testMarkAsOnlineSetsStatusToOnlineAndUpdatesLastLoginTime(): void
     {
         $account = new WeChatAccount();
 
@@ -189,7 +221,7 @@ class WeChatAccountTest extends TestCase
         // 这里只测试状态变更
     }
 
-    public function test_markAsOffline_setsStatusToOffline(): void
+    public function testMarkAsOfflineSetsStatusToOffline(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('online');
@@ -199,7 +231,7 @@ class WeChatAccountTest extends TestCase
         $this->assertEquals('offline', $account->getStatus());
     }
 
-    public function test_markAsExpired_setsStatusToExpired(): void
+    public function testMarkAsExpiredSetsStatusToExpired(): void
     {
         $account = new WeChatAccount();
         $account->setStatus('online');
@@ -209,7 +241,7 @@ class WeChatAccountTest extends TestCase
         $this->assertEquals('expired', $account->getStatus());
     }
 
-    public function test_updateLastActiveTime_setsCurrentTime(): void
+    public function testUpdateLastActiveTimeSetsCurrentTime(): void
     {
         $account = new WeChatAccount();
         $beforeUpdate = new \DateTimeImmutable();
@@ -229,7 +261,7 @@ class WeChatAccountTest extends TestCase
         $this->assertLessThanOrEqual($afterUpdate, $lastActiveTimeImmutable);
     }
 
-    public function test_timeProperties_canBeSetAndRetrieved(): void
+    public function testTimePropertiesCanBeSetAndRetrieved(): void
     {
         $account = new WeChatAccount();
         $testTime = new \DateTimeImmutable('2023-01-01 12:00:00');

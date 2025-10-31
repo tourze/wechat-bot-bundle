@@ -21,8 +21,9 @@ class GetLoginQrCodeRequest extends ApiRequest implements WeChatRequestInterface
         private readonly ?string $deviceType = null,
         private readonly ?string $proxyIp = null,
         private readonly ?string $proxyUser = null,
-        private readonly ?string $proxyPassword = null
-    ) {}
+        private readonly ?string $proxyPassword = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -41,30 +42,31 @@ class GetLoginQrCodeRequest extends ApiRequest implements WeChatRequestInterface
         ];
 
         // 添加可选参数
-        if ($this->province !== null) {
+        if (null !== $this->province) {
             $params['province'] = $this->province;
         }
-        if ($this->city !== null) {
+        if (null !== $this->city) {
             $params['city'] = $this->city;
         }
-        if ($this->deviceType !== null) {
+        if (null !== $this->deviceType) {
             $params['deviceType'] = $this->deviceType;
         }
-        if ($this->proxyIp !== null) {
+        if (null !== $this->proxyIp) {
             $params['proxyIp'] = $this->proxyIp;
         }
-        if ($this->proxyUser !== null) {
+        if (null !== $this->proxyUser) {
             $params['proxyUser'] = $this->proxyUser;
         }
-        if ($this->proxyPassword !== null) {
+        if (null !== $this->proxyPassword) {
             $params['proxyPassword'] = $this->proxyPassword;
         }
 
         return [
             'headers' => [
                 'Authorization' => $this->apiAccount->getAccessToken(),
+                'Content-Type' => 'application/x-www-form-urlencoded',
             ],
-            'form_params' => $params,
+            'body' => http_build_query($params),
         ];
     }
 

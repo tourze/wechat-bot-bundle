@@ -3,6 +3,7 @@
 namespace Tourze\WechatBotBundle\Request;
 
 use HttpClientBundle\Request\ApiRequest;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 
 /**
@@ -13,12 +14,14 @@ use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
  * 注意：这是一个长连接接口，需要设置调用超时时间大于215秒
  * 若215秒后返回未登录，则登录二维码失效，需要重新获取二维码
  */
+#[Autoconfigure(public: true)]
 class ConfirmLoginRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
-        private readonly string $deviceId
-    ) {}
+        private readonly string $deviceId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

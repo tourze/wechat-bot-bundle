@@ -26,8 +26,9 @@ class GetMomentsRequest extends ApiRequest implements WeChatRequestInterface
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly int $page = 1,
-        private readonly int $limit = 20
-    ) {}
+        private readonly int $limit = 20,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

@@ -27,8 +27,9 @@ class GetAccountBillRequest extends ApiRequest implements WeChatRequestInterface
         private readonly ?string $startDate = null,
         private readonly ?string $endDate = null,
         private readonly int $page = 1,
-        private readonly int $limit = 20
-    ) {}
+        private readonly int $limit = 20,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -67,11 +68,11 @@ class GetAccountBillRequest extends ApiRequest implements WeChatRequestInterface
             'limit' => $this->limit,
         ];
 
-        if ($this->startDate !== null) {
+        if (null !== $this->startDate) {
             $query['startDate'] = $this->startDate;
         }
 
-        if ($this->endDate !== null) {
+        if (null !== $this->endDate) {
             $query['endDate'] = $this->endDate;
         }
 

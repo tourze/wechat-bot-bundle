@@ -26,8 +26,9 @@ class UploadMomentImageRequest extends ApiRequest implements WeChatRequestInterf
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $imageBase64,
-        private readonly string $imageType = 'jpg'
-    ) {}
+        private readonly string $imageType = 'jpg',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

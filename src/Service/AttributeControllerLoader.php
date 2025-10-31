@@ -6,6 +6,7 @@ namespace Tourze\WechatBotBundle\Service;
 
 use Symfony\Bundle\FrameworkBundle\Routing\AttributeRouteControllerLoader;
 use Symfony\Component\Config\Loader\Loader;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\Routing\RouteCollection;
 use Tourze\RoutingAutoLoaderBundle\Service\RoutingAutoLoaderInterface;
@@ -20,6 +21,7 @@ use Tourze\WechatBotBundle\Controller\QrCode\LogoutController;
  *
  * 用于自动加载带有路由属性的控制器类
  */
+#[Autoconfigure(public: true)]
 #[AutoconfigureTag(name: 'routing.loader')]
 class AttributeControllerLoader extends Loader implements RoutingAutoLoaderInterface
 {

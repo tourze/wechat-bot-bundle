@@ -4,15 +4,15 @@ namespace Tourze\WechatBotBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 
 /**
  * @extends ServiceEntityRepository<WeChatApiAccount>
- * @method WeChatApiAccount|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeChatApiAccount|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeChatApiAccount[]    findAll()
- * @method WeChatApiAccount[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
+#[Autoconfigure(public: true)]
+#[AsRepository(entityClass: WeChatApiAccount::class)]
 class WeChatApiAccountRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -99,14 +99,24 @@ class WeChatApiAccountRepository extends ServiceEntityRepository
             ->andWhere('(a.tokenExpiresTime IS NULL OR a.tokenExpiresTime > :now)')
             ->setParameter('valid', true)
             ->setParameter('emptyToken', '')
-            ->setParameter('now', new \DateTime())
-            ->orderBy('a.lastLoginTime', 'DESC');
+            ->setParameter('now', new \DateTimeImmutable())
+            ->orderBy('a.lastLoginTime', 'DESC')
+        ;
 
-        return $qb->getQuery()->getResult();
+        $result = $qb->getQuery()->getResult();
+
+        if (!is_array($result)) {
+            return [];
+        }
+
+        /** @var WeChatApiAccount[] */
+        return array_filter($result, fn ($item) => $item instanceof WeChatApiAccount);
     }
 
     /**
      * 获取API账号统计信息
+     *
+     * @return array<string, mixed>
      */
     public function getAccountStatistics(): array
     {
@@ -121,18 +131,59 @@ class WeChatApiAccountRepository extends ServiceEntityRepository
             ')
             ->setParameter('connected', 'connected')
             ->setParameter('disconnected', 'disconnected')
-            ->setParameter('error', 'error');
+            ->setParameter('error', 'error')
+        ;
 
         $result = $qb->getQuery()->getSingleResult();
 
+        if (!is_array($result)) {
+            return $this->getDefaultStatistics();
+        }
+
+        // 确保是 array<string, mixed> 类型
+        /** @var array<string, mixed> $validatedResult */
+        $validatedResult = array_filter($result, static fn ($key) => is_string($key), ARRAY_FILTER_USE_KEY);
+
+        return $this->buildStatisticsArray($validatedResult);
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function getDefaultStatistics(): array
+    {
         return [
-            'total' => (int) $result['totalCount'],
-            'valid' => (int) $result['validCount'],
-            'connected' => (int) $result['connectedCount'],
-            'disconnected' => (int) $result['disconnectedCount'],
-            'error' => (int) $result['errorCount'],
-            'totalApiCalls' => (int) $result['totalApiCalls'],
+            'total' => 0,
+            'valid' => 0,
+            'connected' => 0,
+            'disconnected' => 0,
+            'error' => 0,
+            'totalApiCalls' => 0,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     * @return array<string, int>
+     */
+    private function buildStatisticsArray(array $result): array
+    {
+        return [
+            'total' => $this->extractNumericValue($result, 'totalCount'),
+            'valid' => $this->extractNumericValue($result, 'validCount'),
+            'connected' => $this->extractNumericValue($result, 'connectedCount'),
+            'disconnected' => $this->extractNumericValue($result, 'disconnectedCount'),
+            'error' => $this->extractNumericValue($result, 'errorCount'),
+            'totalApiCalls' => $this->extractNumericValue($result, 'totalApiCalls'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function extractNumericValue(array $result, string $key): int
+    {
+        return isset($result[$key]) && is_numeric($result[$key]) ? (int) $result[$key] : 0;
     }
 
     /**
@@ -147,9 +198,14 @@ class WeChatApiAccountRepository extends ServiceEntityRepository
             ->andWhere('a.lastApiCallTime IS NOT NULL')
             ->setParameter('valid', true)
             ->orderBy('a.lastApiCallTime', 'DESC')
-            ->setMaxResults($limit);
+            ->setMaxResults($limit)
+        ;
 
-        return $qb->getQuery()->getResult();
+        $result = $qb->getQuery()->getResult();
+
+        // 确保返回正确的类型
+        /** @var WeChatApiAccount[] */
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -167,8 +223,7 @@ class WeChatApiAccountRepository extends ServiceEntityRepository
      */
     public function findAccountsNeedingTokenRefresh(int $minutesBeforeExpiry = 30): array
     {
-        $threshold = new \DateTime();
-        $threshold->add(new \DateInterval("PT{$minutesBeforeExpiry}M"));
+        $threshold = (new \DateTimeImmutable())->add(new \DateInterval("PT{$minutesBeforeExpiry}M"));
 
         $qb = $this->createQueryBuilder('a');
         $qb->andWhere('a.valid = :valid')
@@ -178,10 +233,15 @@ class WeChatApiAccountRepository extends ServiceEntityRepository
             ->andWhere('a.tokenExpiresTime > :now')
             ->setParameter('valid', true)
             ->setParameter('threshold', $threshold)
-            ->setParameter('now', new \DateTime())
-            ->orderBy('a.tokenExpiresTime', 'ASC');
+            ->setParameter('now', new \DateTimeImmutable())
+            ->orderBy('a.tokenExpiresTime', 'ASC')
+        ;
 
-        return $qb->getQuery()->getResult();
+        $result = $qb->getQuery()->getResult();
+
+        // 确保返回正确的类型
+        /** @var WeChatApiAccount[] */
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -195,8 +255,30 @@ class WeChatApiAccountRepository extends ServiceEntityRepository
             ->setParameter('valid', true)
             ->setParameter('connected', 'connected')
             ->orderBy('a.lastLoginTime', 'DESC')
-            ->setMaxResults(1);
+            ->setMaxResults(1)
+        ;
 
-        return $qb->getQuery()->getOneOrNullResult();
+        $result = $qb->getQuery()->getOneOrNullResult();
+
+        // 确保返回正确的类型或 null
+        return $result instanceof WeChatApiAccount ? $result : null;
+    }
+
+    public function save(WeChatApiAccount $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(WeChatApiAccount $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

@@ -4,15 +4,16 @@ namespace Tourze\WechatBotBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
 
 /**
- * @method WeChatMessage|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeChatMessage|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeChatMessage[]    findAll()
- * @method WeChatMessage[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<WeChatMessage>
  */
+#[Autoconfigure(public: true)]
+#[AsRepository(entityClass: WeChatMessage::class)]
 class WeChatMessageRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -25,7 +26,7 @@ class WeChatMessageRepository extends ServiceEntityRepository
      */
     public function findByAccount(WeChatAccount $account, int $limit = 100): array
     {
-        return $this->createQueryBuilder('m')
+        $result = $this->createQueryBuilder('m')
             ->where('m.account = :account')
             ->andWhere('m.valid = :valid')
             ->setParameter('account', $account)
@@ -33,7 +34,11 @@ class WeChatMessageRepository extends ServiceEntityRepository
             ->orderBy('m.messageTime', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        /** @var WeChatMessage[] */
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -41,7 +46,7 @@ class WeChatMessageRepository extends ServiceEntityRepository
      */
     public function findUnreadMessages(WeChatAccount $account): array
     {
-        return $this->createQueryBuilder('m')
+        $result = $this->createQueryBuilder('m')
             ->where('m.account = :account')
             ->andWhere('m.direction = :direction')
             ->andWhere('m.isRead = :isRead')
@@ -52,7 +57,11 @@ class WeChatMessageRepository extends ServiceEntityRepository
             ->setParameter('valid', true)
             ->orderBy('m.messageTime', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        /** @var WeChatMessage[] */
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -60,7 +69,7 @@ class WeChatMessageRepository extends ServiceEntityRepository
      */
     public function findGroupMessages(WeChatAccount $account, string $groupId, int $limit = 50): array
     {
-        return $this->createQueryBuilder('m')
+        $result = $this->createQueryBuilder('m')
             ->where('m.account = :account')
             ->andWhere('m.groupId = :groupId')
             ->andWhere('m.valid = :valid')
@@ -70,7 +79,11 @@ class WeChatMessageRepository extends ServiceEntityRepository
             ->orderBy('m.messageTime', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        /** @var WeChatMessage[] */
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -78,7 +91,7 @@ class WeChatMessageRepository extends ServiceEntityRepository
      */
     public function findPrivateMessages(WeChatAccount $account, string $contactId, int $limit = 50): array
     {
-        return $this->createQueryBuilder('m')
+        $result = $this->createQueryBuilder('m')
             ->where('m.account = :account')
             ->andWhere('m.groupId IS NULL')
             ->andWhere('(m.senderId = :contactId OR m.receiverId = :contactId)')
@@ -89,12 +102,16 @@ class WeChatMessageRepository extends ServiceEntityRepository
             ->orderBy('m.messageTime', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        /** @var WeChatMessage[] */
+        return is_array($result) ? $result : [];
     }
 
     public function countUnreadByAccount(WeChatAccount $account): int
     {
-        return $this->createQueryBuilder('m')
+        $result = $this->createQueryBuilder('m')
             ->select('COUNT(m.id)')
             ->where('m.account = :account')
             ->andWhere('m.direction = :direction')
@@ -105,7 +122,10 @@ class WeChatMessageRepository extends ServiceEntityRepository
             ->setParameter('isRead', false)
             ->setParameter('valid', true)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getSingleScalarResult()
+        ;
+
+        return (int) $result;
     }
 
     /**
@@ -121,13 +141,41 @@ class WeChatMessageRepository extends ServiceEntityRepository
             ->setParameter('valid', true)
             ->groupBy('m.messageType')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        // 确保 $result 是数组类型
+        if (!is_array($result)) {
+            return [];
+        }
 
         $counts = [];
         foreach ($result as $row) {
-            $counts[$row['messageType']] = (int) $row['count'];
+            if (is_array($row) && isset($row['count'], $row['messageType'])) {
+                $messageType = is_string($row['messageType']) ? $row['messageType'] : 'unknown';
+                $count = is_numeric($row['count']) ? (int) $row['count'] : 0;
+                $counts[$messageType] = $count;
+            }
         }
 
         return $counts;
+    }
+
+    public function save(WeChatMessage $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(WeChatMessage $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

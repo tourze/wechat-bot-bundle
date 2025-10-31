@@ -27,8 +27,9 @@ class DownloadCdnResourceRequest extends ApiRequest implements WeChatRequestInte
         private readonly string $deviceId,
         private readonly string $cdnUrl,
         private readonly string $aesKey = '',
-        private readonly string $fileKey = ''
-    ) {}
+        private readonly string $fileKey = '',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

@@ -26,8 +26,9 @@ class DownloadImageRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $fromUser,
         private readonly string $toUser,
         private readonly string $content,
-        private readonly ?int $type = null
-    ) {}
+        private readonly ?int $type = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -54,7 +55,7 @@ class DownloadImageRequest extends ApiRequest implements WeChatRequestInterface
             'content' => $this->content,
         ];
 
-        if ($this->type !== null) {
+        if (null !== $this->type) {
             $data['type'] = $this->type;
         }
 
@@ -71,9 +72,20 @@ class DownloadImageRequest extends ApiRequest implements WeChatRequestInterface
     /**
      * 获取下载链接
      */
+    /**
+     * @param array<string, mixed> $response
+     */
     public function getDownloadUrl(array $response): ?string
     {
-        return $response['data']['url'] ?? null;
+        if (!isset($response['data']) || !is_array($response['data'])) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $data */
+        $data = $response['data'];
+        $url = $data['url'] ?? null;
+
+        return is_string($url) ? $url : null;
     }
 
     public function __toString(): string
@@ -83,7 +95,7 @@ class DownloadImageRequest extends ApiRequest implements WeChatRequestInterface
             $this->deviceId,
             $this->msgId,
             $this->fromUser,
-            $this->type === null ? 'null' : (string)$this->type
+            null === $this->type ? 'null' : (string) $this->type
         );
     }
 }

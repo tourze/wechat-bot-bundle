@@ -13,14 +13,18 @@ use Tourze\WechatBotBundle\Entity\WeChatMessage;
  *
  * @author AI Assistant
  */
-readonly class WeChatMessageSendResult implements \Stringable
+class WeChatMessageSendResult implements \Stringable
 {
+    /**
+     * @param array<string, mixed> $apiResponse
+     */
     public function __construct(
-        public bool $success,
-        public ?WeChatMessage $message,
-        public ?array $apiResponse,
-        public ?string $errorMessage
-    ) {}
+        public readonly bool $success,
+        public readonly ?WeChatMessage $message,
+        public readonly ?array $apiResponse,
+        public readonly ?string $errorMessage,
+    ) {
+    }
 
     public function isSuccess(): bool
     {
@@ -34,12 +38,12 @@ readonly class WeChatMessageSendResult implements \Stringable
 
     public function hasMessage(): bool
     {
-        return $this->message !== null;
+        return null !== $this->message;
     }
 
     public function hasError(): bool
     {
-        return $this->errorMessage !== null;
+        return null !== $this->errorMessage;
     }
 
     public function getMessageId(): ?int

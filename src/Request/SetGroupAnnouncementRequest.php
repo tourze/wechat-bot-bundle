@@ -16,8 +16,9 @@ class SetGroupAnnouncementRequest extends ApiRequest implements WeChatRequestInt
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $chatRoomId,
-        private readonly string $content
-    ) {}
+        private readonly string $content,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

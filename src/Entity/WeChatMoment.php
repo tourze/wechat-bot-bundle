@@ -18,11 +18,6 @@ use Tourze\WechatBotBundle\Repository\WeChatMomentRepository;
     name: 'wechat_moment',
     options: ['comment' => '微信朋友圈动态表']
 )]
-#[ORM\Index(columns: ['account_id'], name: 'wechat_moment_idx_account_id')]
-#[ORM\Index(columns: ['moment_id'], name: 'wechat_moment_idx_moment_id')]
-#[ORM\Index(columns: ['author_wxid'], name: 'wechat_moment_idx_author_wxid')]
-#[ORM\Index(columns: ['publish_time'], name: 'wechat_moment_idx_publish_time')]
-#[ORM\Index(columns: ['moment_type'], name: 'wechat_moment_idx_moment_type')]
 class WeChatMoment implements \Stringable
 {
     use TimestampableAware;
@@ -32,10 +27,9 @@ class WeChatMoment implements \Stringable
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '主键ID'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: WeChatAccount::class, fetch: 'LAZY')]
+    #[ORM\ManyToOne(targetEntity: WeChatAccount::class, fetch: 'LAZY', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'account_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull(message: '微信账号不能为空')]
-    #[IndexColumn]
     private ?WeChatAccount $account = null;
 
     #[ORM\Column(
@@ -84,6 +78,7 @@ class WeChatMoment implements \Stringable
     )]
     #[Assert\NotBlank]
     #[Assert\Choice(choices: ['text', 'image', 'video', 'link'])]
+    #[Assert\Length(max: 20)]
     #[IndexColumn]
     private ?string $momentType = null;
 
@@ -92,27 +87,35 @@ class WeChatMoment implements \Stringable
         nullable: true,
         options: ['comment' => '文本内容']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $textContent = null;
 
+    /** @var array<int, string>|null 图片列表 */
     #[ORM\Column(
         type: Types::JSON,
         nullable: true,
         options: ['comment' => '图片列表，存储图片URL数组']
     )]
+    #[Assert\Type(type: 'array')]
     private ?array $images = null;
 
+    /** @var array<string, mixed>|null */
     #[ORM\Column(
         type: Types::JSON,
         nullable: true,
         options: ['comment' => '视频信息，包含视频URL、缩略图等']
     )]
+    #[Assert\Type(type: 'array')]
     private ?array $video = null;
 
+    /** @var array<string, mixed>|null */
     #[ORM\Column(
         type: Types::JSON,
         nullable: true,
         options: ['comment' => '链接信息，包含标题、描述、缩略图等']
     )]
+    #[Assert\Type(type: 'array')]
     private ?array $link = null;
 
     #[ORM\Column(
@@ -128,39 +131,49 @@ class WeChatMoment implements \Stringable
         type: Types::INTEGER,
         options: ['comment' => '点赞数量']
     )]
+    #[Assert\Type(type: 'int')]
+    #[Assert\PositiveOrZero]
     private int $likeCount = 0;
 
     #[ORM\Column(
         type: Types::INTEGER,
         options: ['comment' => '评论数量']
     )]
+    #[Assert\Type(type: 'int')]
+    #[Assert\PositiveOrZero]
     private int $commentCount = 0;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否已点赞']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $isLiked = false;
 
     #[ORM\Column(
         type: Types::DATETIME_IMMUTABLE,
         options: ['comment' => '发布时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     #[IndexColumn]
     private ?\DateTimeInterface $publishTime = null;
 
+    /** @var array<string, mixed>|null */
     #[ORM\Column(
         type: Types::JSON,
         nullable: true,
         options: ['comment' => '点赞用户列表']
     )]
+    #[Assert\Type(type: 'array')]
     private ?array $likeUsers = null;
 
+    /** @var array<string, mixed>|null */
     #[ORM\Column(
         type: Types::JSON,
         nullable: true,
         options: ['comment' => '评论列表']
     )]
+    #[Assert\Type(type: 'array')]
     private ?array $comments = null;
 
     #[ORM\Column(
@@ -168,12 +181,15 @@ class WeChatMoment implements \Stringable
         nullable: true,
         options: ['comment' => '原始数据JSON']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $rawData = null;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否有效']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
     #[ORM\Column(
@@ -181,6 +197,8 @@ class WeChatMoment implements \Stringable
         nullable: true,
         options: ['comment' => '备注信息']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $remark = null;
 
     public function getId(): ?int
@@ -193,10 +211,9 @@ class WeChatMoment implements \Stringable
         return $this->account;
     }
 
-    public function setAccount(?WeChatAccount $account): static
+    public function setAccount(?WeChatAccount $account): void
     {
         $this->account = $account;
-        return $this;
     }
 
     public function getMomentId(): ?string
@@ -204,10 +221,9 @@ class WeChatMoment implements \Stringable
         return $this->momentId;
     }
 
-    public function setMomentId(string $momentId): static
+    public function setMomentId(string $momentId): void
     {
         $this->momentId = $momentId;
-        return $this;
     }
 
     public function getAuthorWxid(): ?string
@@ -215,10 +231,9 @@ class WeChatMoment implements \Stringable
         return $this->authorWxid;
     }
 
-    public function setAuthorWxid(string $authorWxid): static
+    public function setAuthorWxid(string $authorWxid): void
     {
         $this->authorWxid = $authorWxid;
-        return $this;
     }
 
     public function getAuthorNickname(): ?string
@@ -226,10 +241,9 @@ class WeChatMoment implements \Stringable
         return $this->authorNickname;
     }
 
-    public function setAuthorNickname(?string $authorNickname): static
+    public function setAuthorNickname(?string $authorNickname): void
     {
         $this->authorNickname = $authorNickname;
-        return $this;
     }
 
     public function getAuthorAvatar(): ?string
@@ -237,10 +251,9 @@ class WeChatMoment implements \Stringable
         return $this->authorAvatar;
     }
 
-    public function setAuthorAvatar(?string $authorAvatar): static
+    public function setAuthorAvatar(?string $authorAvatar): void
     {
         $this->authorAvatar = $authorAvatar;
-        return $this;
     }
 
     public function getMomentType(): ?string
@@ -248,10 +261,9 @@ class WeChatMoment implements \Stringable
         return $this->momentType;
     }
 
-    public function setMomentType(string $momentType): static
+    public function setMomentType(string $momentType): void
     {
         $this->momentType = $momentType;
-        return $this;
     }
 
     public function getTextContent(): ?string
@@ -259,43 +271,57 @@ class WeChatMoment implements \Stringable
         return $this->textContent;
     }
 
-    public function setTextContent(?string $textContent): static
+    public function setTextContent(?string $textContent): void
     {
         $this->textContent = $textContent;
-        return $this;
     }
 
+    /**
+     * @return array<int, string>|null
+     */
     public function getImages(): ?array
     {
         return $this->images;
     }
 
-    public function setImages(?array $images): static
+    /**
+     * @param array<int, string>|null $images
+     */
+    public function setImages(?array $images): void
     {
         $this->images = $images;
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getVideo(): ?array
     {
         return $this->video;
     }
 
-    public function setVideo(?array $video): static
+    /**
+     * @param array<string, mixed>|null $video
+     */
+    public function setVideo(?array $video): void
     {
         $this->video = $video;
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getLink(): ?array
     {
         return $this->link;
     }
 
-    public function setLink(?array $link): static
+    /**
+     * @param array<string, mixed>|null $link
+     */
+    public function setLink(?array $link): void
     {
         $this->link = $link;
-        return $this;
     }
 
     public function getLocation(): ?string
@@ -303,10 +329,9 @@ class WeChatMoment implements \Stringable
         return $this->location;
     }
 
-    public function setLocation(?string $location): static
+    public function setLocation(?string $location): void
     {
         $this->location = $location;
-        return $this;
     }
 
     public function getLikeCount(): int
@@ -314,10 +339,9 @@ class WeChatMoment implements \Stringable
         return $this->likeCount;
     }
 
-    public function setLikeCount(int $likeCount): static
+    public function setLikeCount(int $likeCount): void
     {
         $this->likeCount = $likeCount;
-        return $this;
     }
 
     public function getCommentCount(): int
@@ -325,10 +349,9 @@ class WeChatMoment implements \Stringable
         return $this->commentCount;
     }
 
-    public function setCommentCount(int $commentCount): static
+    public function setCommentCount(int $commentCount): void
     {
         $this->commentCount = $commentCount;
-        return $this;
     }
 
     public function isLiked(): bool
@@ -336,10 +359,9 @@ class WeChatMoment implements \Stringable
         return $this->isLiked;
     }
 
-    public function setIsLiked(bool $isLiked): static
+    public function setIsLiked(bool $isLiked): void
     {
         $this->isLiked = $isLiked;
-        return $this;
     }
 
     public function getPublishTime(): ?\DateTimeInterface
@@ -347,32 +369,41 @@ class WeChatMoment implements \Stringable
         return $this->publishTime;
     }
 
-    public function setPublishTime(\DateTimeInterface $publishTime): static
+    public function setPublishTime(\DateTimeInterface $publishTime): void
     {
         $this->publishTime = $publishTime;
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getLikeUsers(): ?array
     {
         return $this->likeUsers;
     }
 
-    public function setLikeUsers(?array $likeUsers): static
+    /**
+     * @param array<string, mixed>|null $likeUsers
+     */
+    public function setLikeUsers(?array $likeUsers): void
     {
         $this->likeUsers = $likeUsers;
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getComments(): ?array
     {
         return $this->comments;
     }
 
-    public function setComments(?array $comments): static
+    /**
+     * @param array<string, mixed>|null $comments
+     */
+    public function setComments(?array $comments): void
     {
         $this->comments = $comments;
-        return $this;
     }
 
     public function getRawData(): ?string
@@ -380,10 +411,9 @@ class WeChatMoment implements \Stringable
         return $this->rawData;
     }
 
-    public function setRawData(?string $rawData): static
+    public function setRawData(?string $rawData): void
     {
         $this->rawData = $rawData;
-        return $this;
     }
 
     public function isValid(): bool
@@ -391,10 +421,9 @@ class WeChatMoment implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): static
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
     }
 
     public function getRemark(): ?string
@@ -402,15 +431,15 @@ class WeChatMoment implements \Stringable
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): static
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-        return $this;
     }
 
     public function __toString(): string
     {
         $content = $this->textContent ?? '【' . $this->momentType . '】';
+
         return sprintf(
             '%s: %s',
             $this->authorNickname ?? $this->authorWxid,
@@ -420,45 +449,41 @@ class WeChatMoment implements \Stringable
 
     public function isTextMoment(): bool
     {
-        return $this->momentType === 'text';
+        return 'text' === $this->momentType;
     }
 
     public function isImageMoment(): bool
     {
-        return $this->momentType === 'image';
+        return 'image' === $this->momentType;
     }
 
     public function isVideoMoment(): bool
     {
-        return $this->momentType === 'video';
+        return 'video' === $this->momentType;
     }
 
     public function isLinkMoment(): bool
     {
-        return $this->momentType === 'link';
+        return 'link' === $this->momentType;
     }
 
-    public function incrementLikeCount(): static
+    public function incrementLikeCount(): void
     {
-        $this->likeCount++;
-        return $this;
+        ++$this->likeCount;
     }
 
-    public function decrementLikeCount(): static
+    public function decrementLikeCount(): void
     {
         $this->likeCount = max(0, $this->likeCount - 1);
-        return $this;
     }
 
-    public function incrementCommentCount(): static
+    public function incrementCommentCount(): void
     {
-        $this->commentCount++;
-        return $this;
+        ++$this->commentCount;
     }
 
-    public function decrementCommentCount(): static
+    public function decrementCommentCount(): void
     {
         $this->commentCount = max(0, $this->commentCount - 1);
-        return $this;
     }
 }

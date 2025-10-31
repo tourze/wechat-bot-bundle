@@ -26,8 +26,9 @@ class UpdateGroupNicknameRequest extends ApiRequest implements WeChatRequestInte
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $groupId,
-        private readonly string $nickname
-    ) {}
+        private readonly string $nickname,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

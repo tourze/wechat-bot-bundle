@@ -26,8 +26,9 @@ class LikeMomentRequest extends ApiRequest implements WeChatRequestInterface
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $momentId,
-        private readonly bool $isLike = true
-    ) {}
+        private readonly bool $isLike = true,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

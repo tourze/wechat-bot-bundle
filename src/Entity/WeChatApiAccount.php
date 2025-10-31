@@ -7,8 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -23,14 +22,12 @@ use Tourze\WechatBotBundle\Repository\WeChatApiAccountRepository;
     name: 'wechat_api_account',
     options: ['comment' => '微信API平台账号表']
 )]
-#[ORM\Index(columns: ['name'], name: 'wechat_api_account_idx_name')]
-#[ORM\Index(columns: ['base_url'], name: 'wechat_api_account_idx_base_url')]
-#[ORM\Index(columns: ['valid'], name: 'wechat_api_account_idx_valid')]
 #[UniqueEntity(fields: ['name'], message: '账号名称已存在')]
 class WeChatApiAccount implements \Stringable
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -94,6 +91,7 @@ class WeChatApiAccount implements \Stringable
         nullable: true,
         options: ['comment' => '令牌过期时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $tokenExpiresTime = null;
 
     #[ORM\Column(
@@ -101,6 +99,7 @@ class WeChatApiAccount implements \Stringable
         nullable: true,
         options: ['comment' => '最后登录时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $lastLoginTime = null;
 
     #[ORM\Column(
@@ -108,6 +107,7 @@ class WeChatApiAccount implements \Stringable
         nullable: true,
         options: ['comment' => '最后调用API时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $lastApiCallTime = null;
 
     #[ORM\Column(
@@ -127,7 +127,7 @@ class WeChatApiAccount implements \Stringable
         choices: ['connected', 'disconnected', 'error'],
         message: '连接状态必须是: connected, disconnected, error 中的一个'
     )]
-    #[IndexColumn]
+    #[Assert\Length(max: 20)]
     private string $connectionStatus = 'disconnected';
 
     #[ORM\Column(
@@ -142,6 +142,8 @@ class WeChatApiAccount implements \Stringable
         type: Types::BOOLEAN,
         options: ['comment' => '是否有效']
     )]
+    #[Assert\Type(type: 'bool')]
+    #[IndexColumn]
     private bool $valid = true;
 
     #[ORM\Column(
@@ -149,26 +151,8 @@ class WeChatApiAccount implements \Stringable
         nullable: true,
         options: ['comment' => '备注信息']
     )]
+    #[Assert\Length(max: 65535)]
     private ?string $remark = null;
-
-
-    #[CreateIpColumn]
-    #[ORM\Column(
-        type: Types::STRING,
-        length: 45,
-        nullable: true,
-        options: ['comment' => '创建IP地址']
-    )]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(
-        type: Types::STRING,
-        length: 45,
-        nullable: true,
-        options: ['comment' => '更新IP地址']
-    )]
-    private ?string $updatedFromIp = null;
 
     public function getId(): ?int
     {
@@ -180,10 +164,9 @@ class WeChatApiAccount implements \Stringable
         return $this->name;
     }
 
-    public function setName(string $name): static
+    public function setName(string $name): void
     {
         $this->name = $name;
-        return $this;
     }
 
     public function getBaseUrl(): ?string
@@ -191,10 +174,9 @@ class WeChatApiAccount implements \Stringable
         return $this->baseUrl;
     }
 
-    public function setBaseUrl(string $baseUrl): static
+    public function setBaseUrl(string $baseUrl): void
     {
         $this->baseUrl = rtrim($baseUrl, '/');
-        return $this;
     }
 
     public function getUsername(): ?string
@@ -202,10 +184,9 @@ class WeChatApiAccount implements \Stringable
         return $this->username;
     }
 
-    public function setUsername(string $username): static
+    public function setUsername(string $username): void
     {
         $this->username = $username;
-        return $this;
     }
 
     public function getPassword(): ?string
@@ -213,10 +194,9 @@ class WeChatApiAccount implements \Stringable
         return $this->password;
     }
 
-    public function setPassword(string $password): static
+    public function setPassword(string $password): void
     {
         $this->password = $password;
-        return $this;
     }
 
     public function getAccessToken(): ?string
@@ -224,10 +204,9 @@ class WeChatApiAccount implements \Stringable
         return $this->accessToken;
     }
 
-    public function setAccessToken(?string $accessToken): static
+    public function setAccessToken(?string $accessToken): void
     {
         $this->accessToken = $accessToken;
-        return $this;
     }
 
     public function getTokenExpiresTime(): ?\DateTimeInterface
@@ -235,10 +214,9 @@ class WeChatApiAccount implements \Stringable
         return $this->tokenExpiresTime;
     }
 
-    public function setTokenExpiresTime(?\DateTimeInterface $tokenExpiresTime): static
+    public function setTokenExpiresTime(?\DateTimeInterface $tokenExpiresTime): void
     {
         $this->tokenExpiresTime = $tokenExpiresTime;
-        return $this;
     }
 
     public function getLastLoginTime(): ?\DateTimeInterface
@@ -246,10 +224,9 @@ class WeChatApiAccount implements \Stringable
         return $this->lastLoginTime;
     }
 
-    public function setLastLoginTime(?\DateTimeInterface $lastLoginTime): static
+    public function setLastLoginTime(?\DateTimeInterface $lastLoginTime): void
     {
         $this->lastLoginTime = $lastLoginTime;
-        return $this;
     }
 
     public function getLastApiCallTime(): ?\DateTimeInterface
@@ -257,10 +234,9 @@ class WeChatApiAccount implements \Stringable
         return $this->lastApiCallTime;
     }
 
-    public function setLastApiCallTime(?\DateTimeInterface $lastApiCallTime): static
+    public function setLastApiCallTime(?\DateTimeInterface $lastApiCallTime): void
     {
         $this->lastApiCallTime = $lastApiCallTime;
-        return $this;
     }
 
     public function getApiCallCount(): int
@@ -268,17 +244,15 @@ class WeChatApiAccount implements \Stringable
         return $this->apiCallCount;
     }
 
-    public function setApiCallCount(int $apiCallCount): static
+    public function setApiCallCount(int $apiCallCount): void
     {
         $this->apiCallCount = $apiCallCount;
-        return $this;
     }
 
-    public function incrementApiCallCount(): static
+    public function incrementApiCallCount(): void
     {
-        $this->apiCallCount++;
-        $this->lastApiCallTime = new \DateTime();
-        return $this;
+        ++$this->apiCallCount;
+        $this->lastApiCallTime = new \DateTimeImmutable();
     }
 
     public function getConnectionStatus(): string
@@ -286,10 +260,9 @@ class WeChatApiAccount implements \Stringable
         return $this->connectionStatus;
     }
 
-    public function setConnectionStatus(string $connectionStatus): static
+    public function setConnectionStatus(string $connectionStatus): void
     {
         $this->connectionStatus = $connectionStatus;
-        return $this;
     }
 
     public function getTimeout(): int
@@ -297,10 +270,9 @@ class WeChatApiAccount implements \Stringable
         return $this->timeout;
     }
 
-    public function setTimeout(int $timeout): static
+    public function setTimeout(int $timeout): void
     {
         $this->timeout = $timeout;
-        return $this;
     }
 
     public function isValid(): bool
@@ -308,10 +280,9 @@ class WeChatApiAccount implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): static
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
     }
 
     public function getRemark(): ?string
@@ -319,33 +290,9 @@ class WeChatApiAccount implements \Stringable
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): static
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-        return $this;
-    }
-
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): static
-    {
-        $this->createdFromIp = $createdFromIp;
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): static
-    {
-        $this->updatedFromIp = $updatedFromIp;
-        return $this;
     }
 
     public function __toString(): string
@@ -358,45 +305,42 @@ class WeChatApiAccount implements \Stringable
      */
     public function isConnected(): bool
     {
-        return $this->connectionStatus === 'connected';
+        return 'connected' === $this->connectionStatus;
     }
 
     public function isDisconnected(): bool
     {
-        return $this->connectionStatus === 'disconnected';
+        return 'disconnected' === $this->connectionStatus;
     }
 
     public function isError(): bool
     {
-        return $this->connectionStatus === 'error';
+        return 'error' === $this->connectionStatus;
     }
 
     /**
      * 标记为已连接状态
      */
-    public function markAsConnected(): static
+    public function markAsConnected(): void
     {
         $this->connectionStatus = 'connected';
-        $this->lastLoginTime = new \DateTime();
-        return $this;
+        $this->lastLoginTime = new \DateTimeImmutable();
     }
 
     /**
      * 标记为断开连接状态
      */
-    public function markAsDisconnected(): static
+    public function markAsDisconnected(): void
     {
         $this->connectionStatus = 'disconnected';
-        return $this;
     }
 
     /**
      * 标记为错误状态
      */
-    public function markAsError(): static
+    public function markAsError(): void
     {
         $this->connectionStatus = 'error';
-        return $this;
     }
 
     /**
@@ -404,7 +348,7 @@ class WeChatApiAccount implements \Stringable
      */
     public function hasValidToken(): bool
     {
-        return !empty($this->accessToken) && !$this->isTokenExpired();
+        return null !== $this->accessToken && '' !== $this->accessToken && !$this->isTokenExpired();
     }
 
     /**
@@ -412,10 +356,10 @@ class WeChatApiAccount implements \Stringable
      */
     public function isTokenExpired(): bool
     {
-        if ($this->tokenExpiresTime === null) {
+        if (null === $this->tokenExpiresTime) {
             return false;
         }
 
-        return $this->tokenExpiresTime < new \DateTime();
+        return $this->tokenExpiresTime < new \DateTimeImmutable();
     }
 }

@@ -16,6 +16,7 @@ class GroupMemberInfo
         public readonly string $avatar,
         public readonly string $inviterWxid,
         public readonly int $joinTime,
-        public readonly bool $isAdmin
-    ) {}
+        public readonly bool $isAdmin,
+    ) {
+    }
 }

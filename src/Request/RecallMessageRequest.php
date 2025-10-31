@@ -20,8 +20,9 @@ class RecallMessageRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $wxId,
         private readonly string $msgId,
         private readonly string $newMsgId,
-        private readonly string $createTime
-    ) {}
+        private readonly string $createTime,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

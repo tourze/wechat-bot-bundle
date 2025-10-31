@@ -18,9 +18,6 @@ use Tourze\WechatBotBundle\Repository\WeChatContactRepository;
     name: 'wechat_contact',
     options: ['comment' => '微信联系人表']
 )]
-#[ORM\Index(columns: ['account_id'], name: 'wechat_contact_idx_account_id')]
-#[ORM\Index(columns: ['contact_id'], name: 'wechat_contact_idx_contact_id')]
-#[ORM\Index(columns: ['contact_type'], name: 'wechat_contact_idx_contact_type')]
 class WeChatContact implements \Stringable
 {
     use TimestampableAware;
@@ -30,7 +27,7 @@ class WeChatContact implements \Stringable
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '主键ID'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: WeChatAccount::class)]
+    #[ORM\ManyToOne(targetEntity: WeChatAccount::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private WeChatAccount $account;
 
@@ -79,6 +76,7 @@ class WeChatContact implements \Stringable
     )]
     #[Assert\NotBlank]
     #[Assert\Choice(choices: ['friend', 'stranger', 'blacklist'])]
+    #[Assert\Length(max: 20)]
     #[IndexColumn]
     private string $contactType = 'friend';
 
@@ -89,6 +87,7 @@ class WeChatContact implements \Stringable
         options: ['comment' => '性别：male、female、unknown']
     )]
     #[Assert\Choice(choices: ['male', 'female', 'unknown'])]
+    #[Assert\Length(max: 10)]
     private ?string $gender = null;
 
     #[ORM\Column(
@@ -105,6 +104,7 @@ class WeChatContact implements \Stringable
         nullable: true,
         options: ['comment' => '个性签名']
     )]
+    #[Assert\Length(max: 65535)]
     private ?string $signature = null;
 
     #[ORM\Column(
@@ -121,6 +121,7 @@ class WeChatContact implements \Stringable
         nullable: true,
         options: ['comment' => '添加好友时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $addFriendTime = null;
 
     #[ORM\Column(
@@ -128,12 +129,14 @@ class WeChatContact implements \Stringable
         nullable: true,
         options: ['comment' => '最后聊天时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $lastChatTime = null;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否有效']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
     #[ORM\Column(
@@ -141,6 +144,8 @@ class WeChatContact implements \Stringable
         nullable: true,
         options: ['comment' => '备注信息']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $remark = null;
 
     public function getId(): ?int
@@ -153,10 +158,9 @@ class WeChatContact implements \Stringable
         return $this->account;
     }
 
-    public function setAccount(WeChatAccount $account): static
+    public function setAccount(WeChatAccount $account): void
     {
         $this->account = $account;
-        return $this;
     }
 
     public function getContactId(): string
@@ -164,10 +168,9 @@ class WeChatContact implements \Stringable
         return $this->contactId;
     }
 
-    public function setContactId(string $contactId): static
+    public function setContactId(string $contactId): void
     {
         $this->contactId = $contactId;
-        return $this;
     }
 
     public function getNickname(): ?string
@@ -175,10 +178,9 @@ class WeChatContact implements \Stringable
         return $this->nickname;
     }
 
-    public function setNickname(?string $nickname): static
+    public function setNickname(?string $nickname): void
     {
         $this->nickname = $nickname;
-        return $this;
     }
 
     public function getRemarkName(): ?string
@@ -186,10 +188,9 @@ class WeChatContact implements \Stringable
         return $this->remarkName;
     }
 
-    public function setRemarkName(?string $remarkName): static
+    public function setRemarkName(?string $remarkName): void
     {
         $this->remarkName = $remarkName;
-        return $this;
     }
 
     public function getAvatar(): ?string
@@ -197,10 +198,9 @@ class WeChatContact implements \Stringable
         return $this->avatar;
     }
 
-    public function setAvatar(?string $avatar): static
+    public function setAvatar(?string $avatar): void
     {
         $this->avatar = $avatar;
-        return $this;
     }
 
     public function getContactType(): string
@@ -208,10 +208,9 @@ class WeChatContact implements \Stringable
         return $this->contactType;
     }
 
-    public function setContactType(string $contactType): static
+    public function setContactType(string $contactType): void
     {
         $this->contactType = $contactType;
-        return $this;
     }
 
     public function getGender(): ?string
@@ -219,10 +218,9 @@ class WeChatContact implements \Stringable
         return $this->gender;
     }
 
-    public function setGender(?string $gender): static
+    public function setGender(?string $gender): void
     {
         $this->gender = $gender;
-        return $this;
     }
 
     public function getRegion(): ?string
@@ -230,10 +228,9 @@ class WeChatContact implements \Stringable
         return $this->region;
     }
 
-    public function setRegion(?string $region): static
+    public function setRegion(?string $region): void
     {
         $this->region = $region;
-        return $this;
     }
 
     public function getSignature(): ?string
@@ -241,10 +238,9 @@ class WeChatContact implements \Stringable
         return $this->signature;
     }
 
-    public function setSignature(?string $signature): static
+    public function setSignature(?string $signature): void
     {
         $this->signature = $signature;
-        return $this;
     }
 
     public function getTags(): ?string
@@ -252,10 +248,9 @@ class WeChatContact implements \Stringable
         return $this->tags;
     }
 
-    public function setTags(?string $tags): static
+    public function setTags(?string $tags): void
     {
         $this->tags = $tags;
-        return $this;
     }
 
     public function getAddFriendTime(): ?\DateTimeInterface
@@ -263,10 +258,9 @@ class WeChatContact implements \Stringable
         return $this->addFriendTime;
     }
 
-    public function setAddFriendTime(?\DateTimeInterface $addFriendTime): static
+    public function setAddFriendTime(?\DateTimeInterface $addFriendTime): void
     {
         $this->addFriendTime = $addFriendTime;
-        return $this;
     }
 
     public function getLastChatTime(): ?\DateTimeInterface
@@ -274,10 +268,9 @@ class WeChatContact implements \Stringable
         return $this->lastChatTime;
     }
 
-    public function setLastChatTime(?\DateTimeInterface $lastChatTime): static
+    public function setLastChatTime(?\DateTimeInterface $lastChatTime): void
     {
         $this->lastChatTime = $lastChatTime;
-        return $this;
     }
 
     public function isValid(): bool
@@ -285,10 +278,9 @@ class WeChatContact implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): static
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
     }
 
     public function getRemark(): ?string
@@ -296,10 +288,9 @@ class WeChatContact implements \Stringable
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): static
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-        return $this;
     }
 
     public function __toString(): string
@@ -320,55 +311,57 @@ class WeChatContact implements \Stringable
 
     public function isFriend(): bool
     {
-        return $this->contactType === 'friend';
+        return 'friend' === $this->contactType;
     }
 
     public function isStranger(): bool
     {
-        return $this->contactType === 'stranger';
+        return 'stranger' === $this->contactType;
     }
 
     public function isBlacklisted(): bool
     {
-        return $this->contactType === 'blacklist';
+        return 'blacklist' === $this->contactType;
     }
 
-    public function addTag(string $tag): static
+    public function addTag(string $tag): void
     {
         $tags = $this->getTagsArray();
-        if (!in_array($tag, $tags)) {
+        if (!in_array($tag, $tags, true)) {
             $tags[] = $tag;
             $this->setTagsArray($tags);
         }
-        return $this;
     }
 
+    /**
+     * @return string[]
+     */
     public function getTagsArray(): array
     {
-        if (empty($this->tags)) {
+        if (null === $this->tags || '' === $this->tags) {
             return [];
         }
 
-        return array_filter(array_map('trim', explode(',', $this->tags)));
+        return array_filter(array_map('trim', explode(',', $this->tags)), fn (string $tag): bool => '' !== $tag);
     }
 
-    public function setTagsArray(array $tags): static
+    /**
+     * @param string[] $tags
+     */
+    public function setTagsArray(array $tags): void
     {
-        $this->tags = !empty($tags) ? implode(',', $tags) : null;
-        return $this;
+        $this->tags = [] !== $tags ? implode(',', $tags) : null;
     }
 
-    public function removeTag(string $tag): static
+    public function removeTag(string $tag): void
     {
         $tags = $this->getTagsArray();
-        $tags = array_filter($tags, fn($t) => $t !== $tag);
+        $tags = array_filter($tags, fn ($t) => $t !== $tag);
         $this->setTagsArray($tags);
-        return $this;
     }
 
-    public function updateLastChatTime(): static
+    public function updateLastChatTime(): void
     {
-        $this->lastChatTime = new \DateTime();
-        return $this;
+        $this->lastChatTime = new \DateTimeImmutable();
     }
 }

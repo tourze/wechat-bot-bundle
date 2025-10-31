@@ -13,11 +13,12 @@ use Tourze\WechatBotBundle\Service\QrCodeStatusService;
 /**
  * 显示微信登录二维码页面控制器
  */
-class LoginPageController extends AbstractController
+final class LoginPageController extends AbstractController
 {
     public function __construct(
-        private readonly QrCodeStatusService $statusService
-    ) {}
+        private readonly QrCodeStatusService $statusService,
+    ) {
+    }
 
     /**
      * 显示登录二维码页面
@@ -30,7 +31,7 @@ class LoginPageController extends AbstractController
             'qrCodeUrl' => $account->getQrCodeUrl(),
             'deviceId' => $account->getDeviceId(),
             'status' => $account->getStatus(),
-            'status_message' => $this->statusService->getStatusMessage($account->getStatus())
+            'status_message' => $this->statusService->getStatusMessage($account->getStatus()),
         ]);
     }
 }

@@ -30,8 +30,9 @@ class SendMiniProgramMessageRequest extends ApiRequest implements WeChatRequestI
         private readonly string $title,
         private readonly string $content,
         private readonly string $pagePath,
-        private readonly ?string $thumbUrl = null
-    ) {}
+        private readonly ?string $thumbUrl = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -89,7 +90,7 @@ class SendMiniProgramMessageRequest extends ApiRequest implements WeChatRequestI
             'pagePath' => $this->pagePath,
         ];
 
-        if ($this->thumbUrl !== null) {
+        if (null !== $this->thumbUrl) {
             $data['thumbUrl'] = $this->thumbUrl;
         }
 

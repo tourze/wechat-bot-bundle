@@ -30,6 +30,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
+use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 
 /**
  * 微信账号管理CRUD控制器
@@ -42,9 +43,11 @@ use Tourze\WechatBotBundle\Entity\WeChatAccount;
  * - 设备管理
  *
  * @author AI Assistant
+ *
+ * @extends AbstractCrudController<WeChatAccount>
  */
 #[AdminCrud(routePath: '/wechat-bot/account', routeName: 'wechat_bot_account')]
-class WeChatAccountCrudController extends AbstractCrudController
+final class WeChatAccountCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -64,7 +67,8 @@ class WeChatAccountCrudController extends AbstractCrudController
             ->setDefaultSort(['id' => 'DESC'])
             ->setSearchFields(['deviceId', 'wechatId', 'nickname', 'remark'])
             ->setEntityPermission('ROLE_ADMIN')
-            ->setPaginatorPageSize(20);
+            ->setPaginatorPageSize(20)
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -75,28 +79,33 @@ class WeChatAccountCrudController extends AbstractCrudController
         yield AssociationField::new('apiAccount', 'API账号')
             ->setRequired(true)
             ->setHelp('选择对应的API平台账号')
-            ->formatValue(function ($value) {
-                return $value ? $value->getName() : '-';
-            });
+            ->formatValue(function ($value): string {
+                return $value instanceof WeChatApiAccount ? ($value->getName() ?? '-') : '-';
+            })
+        ;
 
         yield TextField::new('deviceId', '设备ID')
             ->setRequired(true)
             ->setHelp('微信API使用的设备标识，创建后不可修改')
-            ->setFormTypeOption('attr', ['readonly' => $pageName === Crud::PAGE_EDIT]);
+            ->setFormTypeOption('attr', ['readonly' => Crud::PAGE_EDIT === $pageName])
+        ;
 
         yield TextField::new('wechatId', '微信号')
             ->setHelp('登录成功后自动获取的微信号')
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         yield TextField::new('nickname', '昵称')
             ->setHelp('登录成功后自动获取的微信昵称')
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         yield ImageField::new('avatar', '头像')
             ->setBasePath('/')
             ->setHelp('登录成功后自动获取的头像URL')
             ->hideOnForm()
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         // 状态字段
         yield ChoiceField::new('status', '状态')
@@ -104,83 +113,76 @@ class WeChatAccountCrudController extends AbstractCrudController
                 '等待登录' => 'pending_login',
                 '在线' => 'online',
                 '离线' => 'offline',
-                '已过期' => 'expired'
+                '已过期' => 'expired',
             ])
             ->setRequired(true)
-            ->formatValue(function ($value) {
-                return $this->formatStatus($value);
+            ->formatValue(function ($value): string {
+                return $this->formatStatus(is_string($value) ? $value : null);
             })
-            ->setCssClass($this->getStatusCssClass($pageName));
+            ->setCssClass($this->getStatusCssClass($pageName))
+        ;
 
         // 登录信息字段
         yield TextareaField::new('qrCode', '二维码数据')
             ->hideOnIndex()
             ->hideOnForm()
-            ->setHelp('登录用的二维码原始数据');
+            ->setHelp('登录用的二维码原始数据')
+        ;
 
         yield UrlField::new('qrCodeUrl', '二维码图片')
             ->hideOnIndex()
             ->hideOnForm()
-            ->setHelp('登录用的二维码图片地址');
+            ->setHelp('登录用的二维码图片地址')
+        ;
 
         // 网络配置
         yield TextField::new('proxy', '代理设置')
             ->setHelp('网络代理配置，格式：host:port')
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         // 时间字段
         yield DateTimeField::new('lastLoginTime', '最后登录时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->hideOnForm()
-            ->setHelp('最近一次成功登录的时间');
+            ->setHelp('最近一次成功登录的时间')
+        ;
 
         yield DateTimeField::new('lastActiveTime', '最后活跃时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->hideOnForm()
-            ->setHelp('最近一次活跃的时间');
+            ->setHelp('最近一次活跃的时间')
+        ;
 
         // 其他字段
         yield BooleanField::new('valid', '是否有效')
-            ->setHelp('是否启用此账号');
+            ->setHelp('是否启用此账号')
+        ;
 
         yield TextareaField::new('remark', '备注')
             ->setHelp('账号的备注信息')
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         // 时间戳字段
-        yield DateTimeField::new('createdTime', '创建时间')
+        yield DateTimeField::new('createTime', '创建时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->hideOnForm()
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
-        yield DateTimeField::new('updatedTime', '更新时间')
+        yield DateTimeField::new('updateTime', '更新时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->hideOnForm()
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
     }
 
     public function configureActions(Actions $actions): Actions
     {
-        // 添加详情操作
-        $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
-
-        // 重新排序操作按钮
-        $actions->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
-
-        // 自定义操作按钮样式
-        $actions->update(Crud::PAGE_INDEX, Action::DETAIL, function (Action $action) {
-            return $action->setIcon('fa fa-eye')->setLabel('查看');
-        });
-
-        $actions->update(Crud::PAGE_INDEX, Action::EDIT, function (Action $action) {
-            return $action->setIcon('fa fa-edit')->setLabel('编辑');
-        });
-
-        $actions->update(Crud::PAGE_INDEX, Action::DELETE, function (Action $action) {
-            return $action->setIcon('fa fa-trash')->setLabel('删除');
-        });
-
-        return $actions;
+        return $actions
+            ->add(Crud::PAGE_INDEX, Action::DETAIL)
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -194,12 +196,13 @@ class WeChatAccountCrudController extends AbstractCrudController
                 '等待登录' => 'pending_login',
                 '在线' => 'online',
                 '离线' => 'offline',
-                '已过期' => 'expired'
+                '已过期' => 'expired',
             ]))
             ->add(BooleanFilter::new('valid', '是否有效'))
             ->add(DateTimeFilter::new('lastLoginTime', '最后登录时间'))
             ->add(DateTimeFilter::new('lastActiveTime', '最后活跃时间'))
-            ->add(DateTimeFilter::new('createdTime', '创建时间'));
+            ->add(DateTimeFilter::new('createTime', '创建时间'))
+        ;
     }
 
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
@@ -208,7 +211,8 @@ class WeChatAccountCrudController extends AbstractCrudController
             ->select('entity')
             ->leftJoin('entity.apiAccount', 'apiAccount')
             ->addSelect('apiAccount')
-            ->orderBy('entity.id', 'DESC');
+            ->orderBy('entity.id', 'DESC')
+        ;
     }
 
     /**
@@ -221,7 +225,7 @@ class WeChatAccountCrudController extends AbstractCrudController
             'online' => '🟢 在线',
             'offline' => '🔴 离线',
             'expired' => '⚠️ 已过期',
-            default => '❓ 未知'
+            default => '❓ 未知',
         };
     }
 
@@ -230,9 +234,10 @@ class WeChatAccountCrudController extends AbstractCrudController
      */
     private function getStatusCssClass(string $pageName): string
     {
-        if ($pageName === Crud::PAGE_INDEX) {
+        if (Crud::PAGE_INDEX === $pageName) {
             return 'badge';
         }
+
         return '';
     }
 }

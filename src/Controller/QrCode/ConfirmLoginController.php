@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Controller\QrCode;
 
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,12 +15,14 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
 /**
  * 确认微信登录控制器
  */
-class ConfirmLoginController extends AbstractController
+#[WithMonologChannel(channel: 'wechat_bot')]
+final class ConfirmLoginController extends AbstractController
 {
     public function __construct(
         private readonly WeChatAccountService $accountService,
-        private readonly LoggerInterface $logger
-    ) {}
+        private readonly LoggerInterface $logger,
+    ) {
+    }
 
     /**
      * 确认登录
@@ -37,24 +40,24 @@ class ConfirmLoginController extends AbstractController
                     'account' => [
                         'wechatId' => $result->account?->getWechatId(),
                         'nickname' => $result->account?->getNickname(),
-                        'avatar' => $result->account?->getAvatar()
-                    ]
+                        'avatar' => $result->account?->getAvatar(),
+                    ],
                 ]);
-            } else {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => $result->message
-                ], 400);
             }
+
+            return new JsonResponse([
+                'success' => false,
+                'message' => $result->message,
+            ], 400);
         } catch (\Exception $e) {
             $this->logger->error('Failed to confirm login', [
                 'accountId' => $account->getId(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new JsonResponse([
                 'success' => false,
-                'message' => '确认登录失败：' . $e->getMessage()
+                'message' => '确认登录失败：' . $e->getMessage(),
             ], 500);
         }
     }

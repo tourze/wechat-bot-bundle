@@ -29,8 +29,9 @@ class PublishLinkMomentRequest extends ApiRequest implements WeChatRequestInterf
         private readonly string $title,
         private readonly string $description = '',
         private readonly string $content = '',
-        private readonly string $visibility = 'public'
-    ) {}
+        private readonly string $visibility = 'public',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

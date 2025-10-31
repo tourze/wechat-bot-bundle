@@ -1,19 +1,15 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Tourze\WechatBotBundle\Tests\DependencyInjection;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractDependencyInjectionExtensionTestCase;
 use Tourze\WechatBotBundle\DependencyInjection\WechatBotExtension;
 
 /**
- * @covers \Tourze\WechatBotBundle\DependencyInjection\WechatBotExtension
+ * @internal
  */
-class WechatBotExtensionTest extends TestCase
+#[CoversClass(WechatBotExtension::class)]
+final class WechatBotExtensionTest extends AbstractDependencyInjectionExtensionTestCase
 {
-    public function testSomething(): void
-    {
-        $this->markTestIncomplete('This test has not been implemented yet.');
-    }
 }

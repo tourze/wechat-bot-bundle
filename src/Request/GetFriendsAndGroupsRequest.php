@@ -19,8 +19,9 @@ class GetFriendsAndGroupsRequest extends ApiRequest implements WeChatRequestInte
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly ?string $indexs = null
-    ) {}
+        private readonly ?string $indexs = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -49,7 +50,7 @@ class GetFriendsAndGroupsRequest extends ApiRequest implements WeChatRequestInte
         ];
 
         // 如果指定了获取类型，添加indexs参数
-        if ($this->indexs !== null) {
+        if (null !== $this->indexs) {
             $data['indexs'] = $this->indexs;
         }
 

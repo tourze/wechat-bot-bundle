@@ -24,8 +24,9 @@ class GetMessageFiltersRequest extends ApiRequest implements WeChatRequestInterf
 {
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
-        private readonly string $deviceId
-    ) {}
+        private readonly string $deviceId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

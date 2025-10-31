@@ -26,8 +26,9 @@ class DownloadMomentVideoRequest extends ApiRequest implements WeChatRequestInte
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $videoUrl,
-        private readonly string $videoId = ''
-    ) {}
+        private readonly string $videoId = '',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

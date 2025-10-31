@@ -3,6 +3,7 @@
 namespace Tourze\WechatBotBundle\Request;
 
 use HttpClientBundle\Request\ApiRequest;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 
 /**
@@ -11,12 +12,14 @@ use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
  * URL: POST http://网关地址/open/workstation
  * Header: Authorization: 授权密钥
  */
+#[Autoconfigure(public: true)]
 class CreateDeviceRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
-        private readonly string $deviceId
-    ) {}
+        private readonly string $deviceId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -33,10 +36,11 @@ class CreateDeviceRequest extends ApiRequest implements WeChatRequestInterface
         return [
             'headers' => [
                 'Authorization' => $this->apiAccount->getAccessToken(),
+                'Content-Type' => 'application/x-www-form-urlencoded',
             ],
-            'form_params' => [
+            'body' => http_build_query([
                 'deviceId' => $this->deviceId,
-            ],
+            ]),
         ];
     }
 

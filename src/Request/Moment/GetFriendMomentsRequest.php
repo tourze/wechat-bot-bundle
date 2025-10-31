@@ -27,8 +27,9 @@ class GetFriendMomentsRequest extends ApiRequest implements WeChatRequestInterfa
         private readonly string $deviceId,
         private readonly string $friendWxId,
         private readonly int $page = 1,
-        private readonly int $limit = 20
-    ) {}
+        private readonly int $limit = 20,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -79,4 +80,4 @@ class GetFriendMomentsRequest extends ApiRequest implements WeChatRequestInterfa
     {
         return 'GET';
     }
-} 
+}

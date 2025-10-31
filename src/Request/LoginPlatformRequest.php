@@ -14,8 +14,9 @@ use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 class LoginPlatformRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
-        private readonly WeChatApiAccount $apiAccount
-    ) {}
+        private readonly WeChatApiAccount $apiAccount,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -30,10 +31,13 @@ class LoginPlatformRequest extends ApiRequest implements WeChatRequestInterface
     public function getRequestOptions(): ?array
     {
         return [
-            'form_params' => [
+            'headers' => [
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'body' => http_build_query([
                 'username' => $this->apiAccount->getUsername(),
                 'password' => $this->apiAccount->getPassword(),
-            ],
+            ]),
         ];
     }
 

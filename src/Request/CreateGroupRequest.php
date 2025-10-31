@@ -18,8 +18,9 @@ class CreateGroupRequest extends ApiRequest implements WeChatRequestInterface
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $topic,
-        private readonly string $userList
-    ) {}
+        private readonly string $userList,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

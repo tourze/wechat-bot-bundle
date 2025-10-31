@@ -22,13 +22,17 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
  */
 class PublishImageMomentRequest extends ApiRequest implements WeChatRequestInterface
 {
+    /**
+     * @param list<string> $imageIds
+     */
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly array $imageIds,
         private readonly string $content = '',
-        private readonly string $visibility = 'public'
-    ) {}
+        private readonly string $visibility = 'public',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -40,6 +44,9 @@ class PublishImageMomentRequest extends ApiRequest implements WeChatRequestInter
         return $this->deviceId;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getImageIds(): array
     {
         return $this->imageIds;

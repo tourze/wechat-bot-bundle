@@ -26,8 +26,9 @@ class UpdateFriendRemarkRequest extends ApiRequest implements WeChatRequestInter
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $wxId,
-        private readonly string $remark
-    ) {}
+        private readonly string $remark,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

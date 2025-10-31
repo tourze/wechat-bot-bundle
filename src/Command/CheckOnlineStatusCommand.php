@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Command;
 
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +13,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
 use Tourze\WechatBotBundle\Service\WeChatAccountService;
 
@@ -26,17 +29,18 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
  *
  * @author AI Assistant
  */
-#[AsCommand(
-    name: self::NAME,
-    description: '检查所有微信账号的在线状态'
-)]
+#[AsCommand(name: self::NAME, description: '检查所有微信账号的在线状态', help: <<<'TXT'
+    此命令检查数据库中所有微信账号的在线状态，更新状态信息并记录日志。建议每5-10分钟执行一次。
+    TXT)]
+#[WithMonologChannel(channel: 'wechat_bot')]
 class CheckOnlineStatusCommand extends Command
 {
     public const NAME = 'wechat-bot:check-online-status';
+
     public function __construct(
         private readonly WeChatAccountRepository $accountRepository,
         private readonly WeChatAccountService $accountService,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct();
     }
@@ -45,7 +49,6 @@ class CheckOnlineStatusCommand extends Command
     {
         $this
             ->setDescription('检查所有微信账号的在线状态')
-            ->setHelp('此命令检查数据库中所有微信账号的在线状态，更新状态信息并记录日志。建议每5-10分钟执行一次。')
             ->addOption(
                 'only-online',
                 'o',
@@ -64,7 +67,8 @@ class CheckOnlineStatusCommand extends Command
                 InputOption::VALUE_OPTIONAL,
                 '设置检查超时时间（秒）',
                 30
-            );
+            )
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -78,8 +82,9 @@ class CheckOnlineStatusCommand extends Command
             // 获取要检查的账号列表
             $accounts = $this->getAccountsToCheck($input);
 
-            if (empty($accounts)) {
+            if ([] === $accounts) {
                 $io->info('没有找到需要检查的账号');
+
                 return Command::SUCCESS;
             }
 
@@ -93,12 +98,12 @@ class CheckOnlineStatusCommand extends Command
                 'pending' => 0,
                 'expired' => 0,
                 'errors' => 0,
-                'status_changed' => 0
+                'status_changed' => 0,
             ];
 
             // 逐个检查账号状态
             foreach ($accounts as $account) {
-                $this->checkAccountStatus($account, $io, $stats);
+                $stats = $this->checkAccountStatus($account, $io, $stats);
             }
 
             // 输出统计结果
@@ -108,29 +113,32 @@ class CheckOnlineStatusCommand extends Command
         } catch (\Exception $e) {
             $this->logger->error('Check online status command failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             $io->error('检查在线状态失败: ' . $e->getMessage());
+
             return Command::FAILURE;
         }
     }
 
     /**
      * 获取要检查的账号列表
+     * @return array<WeChatAccount>
      */
     private function getAccountsToCheck(InputInterface $input): array
     {
         $accountId = $input->getOption('account-id');
         $onlyOnline = $input->getOption('only-online');
 
-        if ($accountId !== null) {
+        if (null !== $accountId) {
             // 检查指定账号
             $account = $this->accountRepository->find($accountId);
-            return $account !== null ? [$account] : [];
+
+            return null !== $account ? [$account] : [];
         }
 
-        if ($onlyOnline === true) {
+        if (true === $onlyOnline) {
             // 只检查在线账号
             return $this->accountRepository->findBy(['status' => 'online']);
         }
@@ -141,8 +149,10 @@ class CheckOnlineStatusCommand extends Command
 
     /**
      * 检查单个账号状态
+     * @param array<string, int> $stats
+     * @return array<string, int>
      */
-    private function checkAccountStatus($account, SymfonyStyle $io, array &$stats): void
+    private function checkAccountStatus(WeChatAccount $account, SymfonyStyle $io, array $stats): array
     {
         $accountId = $account->getId();
         $deviceId = $account->getDeviceId();
@@ -162,11 +172,11 @@ class CheckOnlineStatusCommand extends Command
             $currentStatus = $account->getStatus(); // 服务已更新状态
 
             // 统计状态
-            $this->updateStats($stats, $currentStatus);
+            $stats = $this->updateStats($stats, $currentStatus);
 
             // 检查状态是否变化
             if ($previousStatus !== $currentStatus) {
-                $stats['status_changed']++;
+                ++$stats['status_changed'];
 
                 $io->writeln(sprintf(
                     '  ✓ 状态变化: %s → %s',
@@ -180,7 +190,7 @@ class CheckOnlineStatusCommand extends Command
                     'previousStatus' => $previousStatus,
                     'currentStatus' => $currentStatus,
                     'isOnline' => $deviceStatus->isOnline,
-                    'lastActiveTime' => $deviceStatus->lastActiveTime?->format('Y-m-d H:i:s')
+                    'lastActiveTime' => $deviceStatus->lastActiveTime?->format('Y-m-d H:i:s'),
                 ]);
             } else {
                 $io->writeln(sprintf(
@@ -190,7 +200,7 @@ class CheckOnlineStatusCommand extends Command
                 ), OutputInterface::VERBOSITY_VERBOSE);
             }
         } catch (\Exception $e) {
-            $stats['errors']++;
+            ++$stats['errors'];
 
             $io->writeln(sprintf(
                 '  ✗ 检查失败: %s',
@@ -200,15 +210,19 @@ class CheckOnlineStatusCommand extends Command
             $this->logger->error('Failed to check account status', [
                 'accountId' => $accountId,
                 'deviceId' => $deviceId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
+
+        return $stats;
     }
 
     /**
      * 更新统计数据
+     * @param array<string, int> $stats
+     * @return array<string, int>
      */
-    private function updateStats(array &$stats, string $status): void
+    private function updateStats(array $stats, string $status): array
     {
         switch ($status) {
             case 'online':
@@ -224,10 +238,13 @@ class CheckOnlineStatusCommand extends Command
                 $stats['expired']++;
                 break;
         }
+
+        return $stats;
     }
 
     /**
      * 输出统计结果
+     * @param array<string, int> $stats
      */
     private function outputStatistics(SymfonyStyle $io, array $stats, float $startTime): void
     {
@@ -238,23 +255,23 @@ class CheckOnlineStatusCommand extends Command
         $table = $io->createTable();
         $table->setHeaders(['状态', '数量', '百分比']);
 
-        $total = $stats['total'];
+        $total = (int) $stats['total'];
         if ($total > 0) {
             $table->addRows([
-                ['在线', $stats['online'], sprintf('%.1f%%', ($stats['online'] / $total) * 100)],
-                ['离线', $stats['offline'], sprintf('%.1f%%', ($stats['offline'] / $total) * 100)],
-                ['等待登录', $stats['pending'], sprintf('%.1f%%', ($stats['pending'] / $total) * 100)],
-                ['已过期', $stats['expired'], sprintf('%.1f%%', ($stats['expired'] / $total) * 100)],
+                ['在线', (int) $stats['online'], sprintf('%.1f%%', ((int) $stats['online'] / $total) * 100)],
+                ['离线', (int) $stats['offline'], sprintf('%.1f%%', ((int) $stats['offline'] / $total) * 100)],
+                ['等待登录', (int) $stats['pending'], sprintf('%.1f%%', ((int) $stats['pending'] / $total) * 100)],
+                ['已过期', (int) $stats['expired'], sprintf('%.1f%%', ((int) $stats['expired'] / $total) * 100)],
                 new TableSeparator(),
-                ['检查失败', $stats['errors'], sprintf('%.1f%%', ($stats['errors'] / $total) * 100)],
-                ['状态变化', $stats['status_changed'], sprintf('%.1f%%', ($stats['status_changed'] / $total) * 100)],
+                ['检查失败', (int) $stats['errors'], sprintf('%.1f%%', ((int) $stats['errors'] / $total) * 100)],
+                ['状态变化', (int) $stats['status_changed'], sprintf('%.1f%%', ((int) $stats['status_changed'] / $total) * 100)],
             ]);
         }
 
         $table->render();
 
         $io->success(sprintf(
-            '检查完成! 总计: %d 个账号, 耗时: %s 秒',
+            '检查完成! 总计: %d 个账号, 耗时: %.2f 秒',
             $total,
             $duration
         ));
@@ -262,7 +279,7 @@ class CheckOnlineStatusCommand extends Command
         // 记录汇总日志
         $this->logger->info('Online status check completed', [
             'stats' => $stats,
-            'duration' => $duration
+            'duration' => $duration,
         ]);
     }
 }

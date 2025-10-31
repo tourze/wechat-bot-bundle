@@ -26,8 +26,9 @@ class UpdateFriendTagRequest extends ApiRequest implements WeChatRequestInterfac
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $tagId,
-        private readonly string $tagName
-    ) {}
+        private readonly string $tagName,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

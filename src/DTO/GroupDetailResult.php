@@ -17,6 +17,7 @@ class GroupDetailResult
         public readonly string $ownerWxid,
         public readonly string $notice,
         public readonly string $avatar,
-        public readonly int $createTime
-    ) {}
+        public readonly int $createTime,
+    ) {
+    }
 }

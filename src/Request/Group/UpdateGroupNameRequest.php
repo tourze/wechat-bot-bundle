@@ -26,8 +26,9 @@ class UpdateGroupNameRequest extends ApiRequest implements WeChatRequestInterfac
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $chatRoomId,
-        private readonly string $chatRoomName
-    ) {}
+        private readonly string $chatRoomName,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -73,4 +74,4 @@ class UpdateGroupNameRequest extends ApiRequest implements WeChatRequestInterfac
     {
         return 'POST';
     }
-} 
+}

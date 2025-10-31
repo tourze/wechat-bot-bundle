@@ -26,8 +26,9 @@ class InviteGroupMemberRequest extends ApiRequest implements WeChatRequestInterf
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $chatRoomId,
-        private readonly string $userList
-    ) {}
+        private readonly string $userList,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Service;
 
+use HttpClientBundle\Request\RequestInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\DTO\MomentInfo;
 use Tourze\WechatBotBundle\DTO\MomentsResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
+use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
+use Tourze\WechatBotBundle\Exception\InvalidArgumentException;
 use Tourze\WechatBotBundle\Request\Moment\CommentMomentRequest;
 use Tourze\WechatBotBundle\Request\Moment\DeleteMomentRequest;
 use Tourze\WechatBotBundle\Request\Moment\DownloadMomentVideoRequest;
@@ -31,69 +36,40 @@ use Tourze\WechatBotBundle\Request\Moment\UploadMomentImageRequest;
  *
  * 提供朋友圈动态获取、发布、互动等业务功能
  */
-class WeChatMomentService
+#[WithMonologChannel(channel: 'wechat_bot')]
+#[Autoconfigure(public: true)]
+readonly class WeChatMomentService
 {
     public function __construct(
-        private readonly WeChatApiClient $apiClient,
-        private readonly LoggerInterface $logger
-    ) {}
+        private WeChatApiClient $apiClient,
+        private LoggerInterface $logger,
+    ) {
+    }
 
     /**
      * 获取朋友圈动态
      */
     public function getMoments(WeChatAccount $account, int $page = 1, int $limit = 20): ?MomentsResult
     {
-        try {
-            $request = new GetMomentsRequest($account->getApiAccount(), $account->getDeviceId(), $page, $limit);
-            $response = $this->apiClient->request($request);
+        return $this->executeApiCall(
+            $account,
+            '获取朋友圈动态',
+            fn (WeChatApiAccount $api, string $did) => $this->performGetMoments($api, $did, $page, $limit),
+            ['page' => $page, 'limit' => $limit]
+        );
+    }
 
-            if (!$response->isSuccess()) {
-                $this->logger->error('获取朋友圈动态失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'page' => $page,
-                    'limit' => $limit,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
+    private function performGetMoments(WeChatApiAccount $apiAccount, string $deviceId, int $page, int $limit): MomentsResult
+    {
+        $request = new GetMomentsRequest($apiAccount, $deviceId, $page, $limit);
+        $data = $this->apiClient->request($request);
 
-            $data = $response->getData();
-            $moments = [];
-
-            foreach ($data['moments'] ?? [] as $momentData) {
-                $moments[] = new MomentInfo(
-                    $momentData['moment_id'] ?? '',
-                    $momentData['wxid'] ?? '',
-                    $momentData['nickname'] ?? '',
-                    $momentData['content'] ?? '',
-                    $momentData['type'] ?? 0,
-                    $momentData['create_time'] ?? 0,
-                    $momentData['images'] ?? [],
-                    $momentData['video_url'] ?? '',
-                    $momentData['link_title'] ?? '',
-                    $momentData['link_desc'] ?? '',
-                    $momentData['link_url'] ?? '',
-                    $momentData['like_count'] ?? 0,
-                    $momentData['comment_count'] ?? 0,
-                    $momentData['likes'] ?? [],
-                    $momentData['comments'] ?? []
-                );
-            }
-
-            return new MomentsResult(
-                $moments,
-                $data['next_max_id'] ?? '',
-                (bool) ($data['has_more'] ?? false)
-            );
-        } catch (\Exception $e) {
-            $this->logger->error('获取朋友圈动态异常', [
-                'device_id' => $account->getDeviceId(),
-                'page' => $page,
-                'limit' => $limit,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Invalid API response format');
         }
+        /** @var array<string, mixed> $data */
+
+        return $this->buildMomentsResult($data);
     }
 
     /**
@@ -101,59 +77,25 @@ class WeChatMomentService
      */
     public function getFriendMoments(WeChatAccount $account, string $friendWxid, int $page = 1, int $limit = 20): ?MomentsResult
     {
-        try {
-            $request = new GetFriendMomentsRequest($account->getApiAccount(), $account->getDeviceId(), $friendWxid, $page, $limit);
-            $response = $this->apiClient->request($request);
+        return $this->executeApiCall(
+            $account,
+            '获取好友朋友圈',
+            fn (WeChatApiAccount $api, string $did) => $this->performGetFriendMoments($api, $did, $friendWxid, $page, $limit),
+            ['friend_wxid' => $friendWxid, 'page' => $page, 'limit' => $limit]
+        );
+    }
 
-            if (!$response->isSuccess()) {
-                $this->logger->error('获取好友朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'friend_wxid' => $friendWxid,
-                    'page' => $page,
-                    'limit' => $limit,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
+    private function performGetFriendMoments(WeChatApiAccount $apiAccount, string $deviceId, string $friendWxid, int $page, int $limit): MomentsResult
+    {
+        $request = new GetFriendMomentsRequest($apiAccount, $deviceId, $friendWxid, $page, $limit);
+        $data = $this->apiClient->request($request);
 
-            $data = $response->getData();
-            $moments = [];
-
-            foreach ($data['moments'] ?? [] as $momentData) {
-                $moments[] = new MomentInfo(
-                    $momentData['moment_id'] ?? '',
-                    $momentData['wxid'] ?? '',
-                    $momentData['nickname'] ?? '',
-                    $momentData['content'] ?? '',
-                    $momentData['type'] ?? 0,
-                    $momentData['create_time'] ?? 0,
-                    $momentData['images'] ?? [],
-                    $momentData['video_url'] ?? '',
-                    $momentData['link_title'] ?? '',
-                    $momentData['link_desc'] ?? '',
-                    $momentData['link_url'] ?? '',
-                    $momentData['like_count'] ?? 0,
-                    $momentData['comment_count'] ?? 0,
-                    $momentData['likes'] ?? [],
-                    $momentData['comments'] ?? []
-                );
-            }
-
-            return new MomentsResult(
-                $moments,
-                $data['next_max_id'] ?? '',
-                (bool) ($data['has_more'] ?? false)
-            );
-        } catch (\Exception $e) {
-            $this->logger->error('获取好友朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'friend_wxid' => $friendWxid,
-                'page' => $page,
-                'limit' => $limit,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Invalid API response format');
         }
+        /** @var array<string, mixed> $data */
+
+        return $this->buildMomentsResult($data);
     }
 
     /**
@@ -161,45 +103,27 @@ class WeChatMomentService
      */
     public function getMomentDetail(WeChatAccount $account, string $momentId): ?MomentInfo
     {
-        try {
-            $request = new GetMomentDetailRequest($account->getApiAccount(), $account->getDeviceId(), $momentId);
-            $response = $this->apiClient->request($request);
+        return $this->executeApiCall(
+            $account,
+            '获取朋友圈详情',
+            fn (WeChatApiAccount $api, string $did) => $this->performGetMomentDetail($api, $did, $momentId),
+            ['moment_id' => $momentId]
+        );
+    }
 
-            if (!$response->isSuccess()) {
-                $this->logger->error('获取朋友圈详情失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
+    private function performGetMomentDetail(WeChatApiAccount $apiAccount, string $deviceId, string $momentId): MomentInfo
+    {
+        $request = new GetMomentDetailRequest($apiAccount, $deviceId, $momentId);
+        $data = $this->apiClient->request($request);
 
-            $data = $response->getData();
-            return new MomentInfo(
-                $data['moment_id'] ?? '',
-                $data['wxid'] ?? '',
-                $data['nickname'] ?? '',
-                $data['content'] ?? '',
-                $data['type'] ?? 0,
-                $data['create_time'] ?? 0,
-                $data['images'] ?? [],
-                $data['video_url'] ?? '',
-                $data['link_title'] ?? '',
-                $data['link_desc'] ?? '',
-                $data['link_url'] ?? '',
-                $data['like_count'] ?? 0,
-                $data['comment_count'] ?? 0,
-                $data['likes'] ?? [],
-                $data['comments'] ?? []
-            );
-        } catch (\Exception $e) {
-            $this->logger->error('获取朋友圈详情异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Invalid API response format');
         }
+
+        /** @var array<string, mixed> $dataTyped */
+        $dataTyped = $data;
+
+        return $this->buildMomentInfo($dataTyped);
     }
 
     /**
@@ -207,33 +131,12 @@ class WeChatMomentService
      */
     public function likeMoment(WeChatAccount $account, string $momentId): bool
     {
-        try {
-            $request = new LikeMomentRequest($account->getApiAccount(), $account->getDeviceId(), $momentId);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('朋友圈点赞失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return false;
-            }
-
-            $this->logger->info('朋友圈点赞成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error('朋友圈点赞异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'exception' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->executeSimpleApiCall(
+            $account,
+            '朋友圈点赞',
+            $momentId,
+            fn (WeChatApiAccount $api, string $did) => new LikeMomentRequest($api, $did, $momentId)
+        );
     }
 
     /**
@@ -241,35 +144,12 @@ class WeChatMomentService
      */
     public function commentMoment(WeChatAccount $account, string $momentId, string $comment): bool
     {
-        try {
-            $request = new CommentMomentRequest($account->getApiAccount(), $account->getDeviceId(), $momentId, $comment);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('朋友圈评论失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'comment' => $comment,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return false;
-            }
-
-            $this->logger->info('朋友圈评论成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error('朋友圈评论异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'comment' => $comment,
-                'exception' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->executeSimpleApiCall(
+            $account,
+            '朋友圈评论',
+            $momentId,
+            fn (WeChatApiAccount $api, string $did) => new CommentMomentRequest($api, $did, $momentId, $comment)
+        );
     }
 
     /**
@@ -277,36 +157,11 @@ class WeChatMomentService
      */
     public function publishTextMoment(WeChatAccount $account, string $content): ?string
     {
-        try {
-            $request = new PublishTextMomentRequest($account->getApiAccount(), $account->getDeviceId(), $content);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('发布文本朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'content' => $content,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
-
-            $data = $response->getData();
-            $momentId = $data['moment_id'] ?? '';
-
-            $this->logger->info('发布文本朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId
-            ]);
-
-            return $momentId;
-        } catch (\Exception $e) {
-            $this->logger->error('发布文本朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'content' => $content,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
-        }
+        return $this->executePublishApiCall(
+            $account,
+            '发布文本朋友圈',
+            fn (WeChatApiAccount $api, string $did) => new PublishTextMomentRequest($api, $did, $content)
+        );
     }
 
     /**
@@ -314,39 +169,11 @@ class WeChatMomentService
      */
     public function publishLinkMoment(WeChatAccount $account, string $linkUrl, string $title, string $description = '', string $content = ''): ?string
     {
-        try {
-            $request = new PublishLinkMomentRequest($account->getApiAccount(), $account->getDeviceId(), $linkUrl, $title, $description, $content);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('发布链接朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'link_url' => $linkUrl,
-                    'title' => $title,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
-
-            $data = $response->getData();
-            $momentId = $data['moment_id'] ?? '';
-
-            $this->logger->info('发布链接朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'link_url' => $linkUrl
-            ]);
-
-            return $momentId;
-        } catch (\Exception $e) {
-            $this->logger->error('发布链接朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'link_url' => $linkUrl,
-                'title' => $title,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
-        }
+        return $this->executePublishApiCall(
+            $account,
+            '发布链接朋友圈',
+            fn (WeChatApiAccount $api, string $did) => new PublishLinkMomentRequest($api, $did, $linkUrl, $title, $description, $content)
+        );
     }
 
     /**
@@ -354,39 +181,11 @@ class WeChatMomentService
      */
     public function publishVideoMoment(WeChatAccount $account, string $videoPath, string $content = ''): ?string
     {
-        try {
-            $request = new PublishVideoMomentRequest($account->getApiAccount(), $account->getDeviceId(), $videoPath, $content);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('发布视频朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'video_path' => $videoPath,
-                    'content' => $content,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
-
-            $data = $response->getData();
-            $momentId = $data['moment_id'] ?? '';
-
-            $this->logger->info('发布视频朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'video_path' => $videoPath
-            ]);
-
-            return $momentId;
-        } catch (\Exception $e) {
-            $this->logger->error('发布视频朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'video_path' => $videoPath,
-                'content' => $content,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
-        }
+        return $this->executePublishApiCall(
+            $account,
+            '发布视频朋友圈',
+            fn (WeChatApiAccount $api, string $did) => new PublishVideoMomentRequest($api, $did, $videoPath, $content)
+        );
     }
 
     /**
@@ -394,37 +193,32 @@ class WeChatMomentService
      */
     public function downloadMomentVideo(WeChatAccount $account, string $videoUrl): ?string
     {
-        try {
-            $request = new DownloadMomentVideoRequest($account->getApiAccount(), $account->getDeviceId(), $videoUrl);
-            $response = $this->apiClient->request($request);
+        return $this->executeApiCall(
+            $account,
+            '下载朋友圈视频',
+            fn (WeChatApiAccount $api, string $did) => $this->performDownloadMomentVideo($api, $did, $videoUrl),
+            ['video_url' => $videoUrl]
+        );
+    }
 
-            if (!$response->isSuccess()) {
-                $this->logger->error('下载朋友圈视频失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'video_url' => $videoUrl,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
+    private function performDownloadMomentVideo(WeChatApiAccount $apiAccount, string $deviceId, string $videoUrl): ?string
+    {
+        $request = new DownloadMomentVideoRequest($apiAccount, $deviceId, $videoUrl);
+        $data = $this->apiClient->request($request);
 
-            $data = $response->getData();
-            $filePath = $data['file_path'] ?? '';
-
-            $this->logger->info('下载朋友圈视频成功', [
-                'device_id' => $account->getDeviceId(),
-                'video_url' => $videoUrl,
-                'file_path' => $filePath
-            ]);
-
-            return $filePath;
-        } catch (\Exception $e) {
-            $this->logger->error('下载朋友圈视频异常', [
-                'device_id' => $account->getDeviceId(),
-                'video_url' => $videoUrl,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Invalid API response format: expected array, got ' . gettype($data));
         }
+
+        $filePath = is_string($data['file_path'] ?? null) ? $data['file_path'] : null;
+
+        $this->logger->info('下载朋友圈视频成功', [
+            'device_id' => $deviceId,
+            'video_url' => $videoUrl,
+            'file_path' => $filePath,
+        ]);
+
+        return $filePath;
     }
 
     /**
@@ -432,39 +226,11 @@ class WeChatMomentService
      */
     public function forwardMoment(WeChatAccount $account, string $momentId, string $content = ''): ?string
     {
-        try {
-            $request = new ForwardMomentRequest($account->getApiAccount(), $account->getDeviceId(), $momentId, $content);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('转发朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'content' => $content,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
-
-            $data = $response->getData();
-            $newMomentId = $data['moment_id'] ?? '';
-
-            $this->logger->info('转发朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'original_moment_id' => $momentId,
-                'new_moment_id' => $newMomentId
-            ]);
-
-            return $newMomentId;
-        } catch (\Exception $e) {
-            $this->logger->error('转发朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'content' => $content,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
-        }
+        return $this->executePublishApiCall(
+            $account,
+            '转发朋友圈',
+            fn (WeChatApiAccount $api, string $did) => new ForwardMomentRequest($api, $did, $momentId, $content)
+        );
     }
 
     /**
@@ -472,33 +238,12 @@ class WeChatMomentService
      */
     public function deleteMoment(WeChatAccount $account, string $momentId): bool
     {
-        try {
-            $request = new DeleteMomentRequest($account->getApiAccount(), $account->getDeviceId(), $momentId);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('删除朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return false;
-            }
-
-            $this->logger->info('删除朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error('删除朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'exception' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->executeSimpleApiCall(
+            $account,
+            '删除朋友圈',
+            $momentId,
+            fn (WeChatApiAccount $api, string $did) => new DeleteMomentRequest($api, $did, $momentId)
+        );
     }
 
     /**
@@ -506,33 +251,12 @@ class WeChatMomentService
      */
     public function hideMoment(WeChatAccount $account, string $momentId): bool
     {
-        try {
-            $request = new HideMomentRequest($account->getApiAccount(), $account->getDeviceId(), $momentId);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('隐藏朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return false;
-            }
-
-            $this->logger->info('隐藏朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error('隐藏朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'exception' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->executeSimpleApiCall(
+            $account,
+            '隐藏朋友圈',
+            $momentId,
+            fn (WeChatApiAccount $api, string $did) => new HideMomentRequest($api, $did, $momentId)
+        );
     }
 
     /**
@@ -540,64 +264,32 @@ class WeChatMomentService
      */
     public function showMoment(WeChatAccount $account, string $momentId): bool
     {
-        try {
-            $request = new ShowMomentRequest($account->getApiAccount(), $account->getDeviceId(), $momentId);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('公开朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'moment_id' => $momentId,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return false;
-            }
-
-            $this->logger->info('公开朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            $this->logger->error('公开朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'exception' => $e->getMessage()
-            ]);
-            return false;
-        }
+        return $this->executeSimpleApiCall(
+            $account,
+            '公开朋友圈',
+            $momentId,
+            fn (WeChatApiAccount $api, string $did) => new ShowMomentRequest($api, $did, $momentId)
+        );
     }
 
     /**
      * 批量上传图片并发布朋友圈
+     *
+     * @param list<string> $imageFilePaths
      */
     public function publishImageMomentFromFiles(WeChatAccount $account, array $imageFilePaths, string $content = ''): ?string
     {
-        $uploadedImageIds = [];
+        $uploadedImageIds = $this->uploadMultipleImages($account, $imageFilePaths, 'file');
 
-        // 批量上传图片
-        foreach ($imageFilePaths as $filePath) {
-            $imageId = $this->uploadMomentImageFile($account, $filePath);
-            if ((bool) $imageId) {
-                $uploadedImageIds[] = $imageId;
-            } else {
-                $this->logger->warning('图片上传失败，跳过', [
-                    'device_id' => $account->getDeviceId(),
-                    'file_path' => $filePath
-                ]);
-            }
-        }
-
-        if ((bool) empty($uploadedImageIds)) {
+        if ([] === $uploadedImageIds) {
             $this->logger->error('所有图片上传失败', [
                 'device_id' => $account->getDeviceId(),
-                'file_paths' => $imageFilePaths
+                'file_paths' => $imageFilePaths,
             ]);
+
             return null;
         }
 
-        // 发布朋友圈
         return $this->publishImageMoment($account, $uploadedImageIds, $content);
     }
 
@@ -606,107 +298,45 @@ class WeChatMomentService
      */
     public function uploadMomentImageFile(WeChatAccount $account, string $imageFilePath): ?string
     {
-        try {
-            $request = new UploadMomentImageFileRequest($account->getApiAccount(), $account->getDeviceId(), $imageFilePath);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('上传朋友圈图片文件失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'image_file_path' => $imageFilePath,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
-
-            $data = $response->getData();
-            $imageId = $data['image_id'] ?? '';
-
-            $this->logger->info('上传朋友圈图片文件成功', [
-                'device_id' => $account->getDeviceId(),
-                'image_id' => $imageId,
-                'image_file_path' => $imageFilePath
-            ]);
-
-            return $imageId;
-        } catch (\Exception $e) {
-            $this->logger->error('上传朋友圈图片文件异常', [
-                'device_id' => $account->getDeviceId(),
-                'image_file_path' => $imageFilePath,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
-        }
+        return $this->executePublishApiCall(
+            $account,
+            '上传朋友圈图片文件',
+            fn (WeChatApiAccount $api, string $did) => new UploadMomentImageFileRequest($api, $did, $imageFilePath)
+        );
     }
 
     /**
      * 发布图片朋友圈
+     *
+     * @param list<string> $imageIds
      */
     public function publishImageMoment(WeChatAccount $account, array $imageIds, string $content = ''): ?string
     {
-        try {
-            $request = new PublishImageMomentRequest($account->getApiAccount(), $account->getDeviceId(), $imageIds, $content);
-            $response = $this->apiClient->request($request);
-
-            if (!$response->isSuccess()) {
-                $this->logger->error('发布图片朋友圈失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'image_ids' => $imageIds,
-                    'content' => $content,
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
-            }
-
-            $data = $response->getData();
-            $momentId = $data['moment_id'] ?? '';
-
-            $this->logger->info('发布图片朋友圈成功', [
-                'device_id' => $account->getDeviceId(),
-                'moment_id' => $momentId,
-                'image_count' => count($imageIds)
-            ]);
-
-            return $momentId;
-        } catch (\Exception $e) {
-            $this->logger->error('发布图片朋友圈异常', [
-                'device_id' => $account->getDeviceId(),
-                'image_ids' => $imageIds,
-                'content' => $content,
-                'exception' => $e->getMessage()
-            ]);
-            return null;
-        }
+        return $this->executePublishApiCall(
+            $account,
+            '发布图片朋友圈',
+            fn (WeChatApiAccount $api, string $did) => new PublishImageMomentRequest($api, $did, $imageIds, $content)
+        );
     }
 
     /**
      * 批量上传base64图片并发布朋友圈
+     *
+     * @param list<string> $imageBase64List
      */
     public function publishImageMomentFromBase64(WeChatAccount $account, array $imageBase64List, string $content = ''): ?string
     {
-        $uploadedImageIds = [];
+        $uploadedImageIds = $this->uploadMultipleImages($account, $imageBase64List, 'base64');
 
-        // 批量上传图片
-        foreach ($imageBase64List as $base64) {
-            $imageId = $this->uploadMomentImage($account, $base64);
-            if ((bool) $imageId) {
-                $uploadedImageIds[] = $imageId;
-            } else {
-                $this->logger->warning('base64图片上传失败，跳过', [
-                    'device_id' => $account->getDeviceId()
-                ]);
-            }
-        }
-
-        if ((bool) empty($uploadedImageIds)) {
+        if ([] === $uploadedImageIds) {
             $this->logger->error('所有base64图片上传失败', [
                 'device_id' => $account->getDeviceId(),
-                'image_count' => count($imageBase64List)
+                'image_count' => count($imageBase64List),
             ]);
+
             return null;
         }
 
-        // 发布朋友圈
         return $this->publishImageMoment($account, $uploadedImageIds, $content);
     }
 
@@ -715,33 +345,217 @@ class WeChatMomentService
      */
     public function uploadMomentImage(WeChatAccount $account, string $imageBase64): ?string
     {
-        try {
-            $request = new UploadMomentImageRequest($account->getApiAccount(), $account->getDeviceId(), $imageBase64);
-            $response = $this->apiClient->request($request);
+        return $this->executePublishApiCall(
+            $account,
+            '上传朋友圈图片',
+            fn (WeChatApiAccount $api, string $did) => new UploadMomentImageRequest($api, $did, $imageBase64)
+        );
+    }
 
-            if (!$response->isSuccess()) {
-                $this->logger->error('上传朋友圈图片失败', [
-                    'device_id' => $account->getDeviceId(),
-                    'error' => $response->getErrorMessage()
-                ]);
-                return null;
+    /**
+     * 批量上传图片
+     *
+     * @param list<string> $images
+     * @return list<string>
+     */
+    private function uploadMultipleImages(WeChatAccount $account, array $images, string $type): array
+    {
+        $uploadedImageIds = [];
+
+        foreach ($images as $image) {
+            // PHPDoc 已声明 $images 为 list<string>，无需额外类型检查
+            if ('' === $image) {
+                $this->logger->warning($type . '数据无效，跳过', ['device_id' => $account->getDeviceId()]);
+                continue;
             }
 
-            $data = $response->getData();
-            $imageId = $data['image_id'] ?? '';
+            $imageId = ('base64' === $type)
+                ? $this->uploadMomentImage($account, $image)
+                : $this->uploadMomentImageFile($account, $image);
 
-            $this->logger->info('上传朋友圈图片成功', [
-                'device_id' => $account->getDeviceId(),
-                'image_id' => $imageId
-            ]);
+            if ((bool) $imageId) {
+                $uploadedImageIds[] = $imageId;
+            } else {
+                $this->logger->warning($type . '图片上传失败，跳过', ['device_id' => $account->getDeviceId()]);
+            }
+        }
 
-            return $imageId;
+        return $uploadedImageIds;
+    }
+
+    /**
+     * 从API数据构建MomentInfo对象
+     *
+     * @param array<string, mixed> $data
+     */
+    private function buildMomentInfo(array $data): MomentInfo
+    {
+        $rawImages = $this->extractArray($data, 'images');
+        /** @var list<string> $images */
+        $images = array_values(array_filter($rawImages, 'is_string'));
+
+        /** @var array<string, mixed> $likes */
+        $likes = $this->extractArray($data, 'likes');
+
+        /** @var array<string, mixed> $comments */
+        $comments = $this->extractArray($data, 'comments');
+
+        return new MomentInfo(
+            $this->extractString($data, 'moment_id'),
+            $this->extractString($data, 'wxid'),
+            $this->extractString($data, 'nickname'),
+            $this->extractString($data, 'content'),
+            $this->extractInt($data, 'type'),
+            $this->extractInt($data, 'create_time'),
+            $images,
+            $this->extractString($data, 'video_url'),
+            $this->extractString($data, 'link_title'),
+            $this->extractString($data, 'link_desc'),
+            $this->extractString($data, 'link_url'),
+            $this->extractInt($data, 'like_count'),
+            $this->extractInt($data, 'comment_count'),
+            $likes,
+            $comments
+        );
+    }
+
+    /**
+     * 验证并获取API账号和设备ID
+     *
+     * @return array{0: WeChatApiAccount, 1: string}
+     */
+    private function requireApiAndDevice(WeChatAccount $account): array
+    {
+        $apiAccount = $account->getApiAccount();
+        $deviceId = $account->getDeviceId();
+
+        if (null === $apiAccount || null === $deviceId) {
+            throw new InvalidArgumentException('API账号或设备ID不可用');
+        }
+
+        return [$apiAccount, $deviceId];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function extractString(array $data, string $key): string
+    {
+        return is_string($data[$key] ?? null) ? $data[$key] : '';
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function extractInt(array $data, string $key): int
+    {
+        return is_int($data[$key] ?? null) ? $data[$key] : 0;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<mixed>
+     */
+    private function extractArray(array $data, string $key): array
+    {
+        return is_array($data[$key] ?? null) ? $data[$key] : [];
+    }
+
+    /**
+     * 构建朋友圈列表结果
+     *
+     * @param array<string, mixed> $data
+     */
+    private function buildMomentsResult(array $data): MomentsResult
+    {
+        $rawMoments = $data['moments'] ?? [];
+        $moments = is_array($rawMoments) ? $rawMoments : [];
+
+        /** @var array<int, array<string, mixed>> $momentsTyped */
+        $momentsTyped = array_values(array_filter($moments, 'is_array'));
+
+        return new MomentsResult(
+            $momentsTyped,
+            is_string($data['next_max_id'] ?? null) ? $data['next_max_id'] : '',
+            (bool) ($data['has_more'] ?? false)
+        );
+    }
+
+    /**
+     * 统一的API调用包装器，处理异常和日志
+     *
+     * @template T
+     * @param callable(WeChatApiAccount, string): T $operation
+     * @param array<string, mixed> $context
+     * @return T|null
+     */
+    private function executeApiCall(WeChatAccount $account, string $operationName, callable $operation, array $context = []): mixed
+    {
+        try {
+            [$apiAccount, $deviceId] = $this->requireApiAndDevice($account);
+
+            return $operation($apiAccount, $deviceId);
         } catch (\Exception $e) {
-            $this->logger->error('上传朋友圈图片异常', [
-                'device_id' => $account->getDeviceId(),
-                'exception' => $e->getMessage()
-            ]);
+            $this->logger->error($operationName . '异常', array_merge(
+                ['device_id' => $account->getDeviceId(), 'exception' => $e->getMessage()],
+                $context
+            ));
+
             return null;
         }
+    }
+
+    /**
+     * 简单API调用（返回布尔值，记录成功日志）
+     */
+    private function executeSimpleApiCall(WeChatAccount $account, string $operationName, string $momentId, callable $requestFactory): bool
+    {
+        return $this->executeApiCall(
+            $account,
+            $operationName,
+            function (WeChatApiAccount $apiAccount, string $deviceId) use ($requestFactory, $operationName, $momentId) {
+                $request = $requestFactory($apiAccount, $deviceId);
+                assert($request instanceof RequestInterface);
+                $this->apiClient->request($request);
+
+                $this->logger->info($operationName . '成功', [
+                    'device_id' => $deviceId,
+                    'moment_id' => $momentId,
+                ]);
+
+                return true;
+            },
+            ['moment_id' => $momentId]
+        ) ?? false;
+    }
+
+    /**
+     * 发布类API调用（返回moment_id或image_id）
+     */
+    private function executePublishApiCall(WeChatAccount $account, string $operationName, callable $requestFactory): ?string
+    {
+        return $this->executeApiCall(
+            $account,
+            $operationName,
+            function (WeChatApiAccount $apiAccount, string $deviceId) use ($requestFactory, $operationName) {
+                $request = $requestFactory($apiAccount, $deviceId);
+                assert($request instanceof RequestInterface);
+                $data = $this->apiClient->request($request);
+
+                if (!is_array($data)) {
+                    throw new \InvalidArgumentException('Invalid API response format: expected array, got ' . gettype($data));
+                }
+
+                $id = is_string($data['moment_id'] ?? null) ? $data['moment_id'] : (is_string($data['image_id'] ?? null) ? $data['image_id'] : null);
+
+                $this->logger->info($operationName . '成功', [
+                    'device_id' => $deviceId,
+                    'result_id' => $id,
+                ]);
+
+                return $id;
+            },
+            []
+        );
     }
 }

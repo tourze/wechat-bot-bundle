@@ -26,8 +26,9 @@ class UploadImageToCdnRequest extends ApiRequest implements WeChatRequestInterfa
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $imagePath,
-        private readonly string $fileName = ''
-    ) {}
+        private readonly string $fileName = '',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -68,7 +69,7 @@ class UploadImageToCdnRequest extends ApiRequest implements WeChatRequestInterfa
                 [
                     'name' => 'image',
                     'contents' => fopen($this->imagePath, 'r'),
-                    'filename' => $this->fileName !== '' ? $this->fileName : basename($this->imagePath),
+                    'filename' => '' !== $this->fileName ? $this->fileName : basename($this->imagePath),
                 ],
             ],
         ];

@@ -4,15 +4,16 @@ namespace Tourze\WechatBotBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatContact;
 
 /**
- * @method WeChatContact|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeChatContact|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeChatContact[]    findAll()
- * @method WeChatContact[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<WeChatContact>
  */
+#[Autoconfigure(public: true)]
+#[AsRepository(entityClass: WeChatContact::class)]
 class WeChatContactRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -25,7 +26,7 @@ class WeChatContactRepository extends ServiceEntityRepository
         return $this->findOneBy([
             'account' => $account,
             'contactId' => $contactId,
-            'valid' => true
+            'valid' => true,
         ]);
     }
 
@@ -37,7 +38,7 @@ class WeChatContactRepository extends ServiceEntityRepository
         return $this->findBy([
             'account' => $account,
             'contactType' => 'friend',
-            'valid' => true
+            'valid' => true,
         ], ['nickname' => 'ASC']);
     }
 
@@ -49,7 +50,7 @@ class WeChatContactRepository extends ServiceEntityRepository
         return $this->findBy([
             'account' => $account,
             'contactType' => $contactType,
-            'valid' => true
+            'valid' => true,
         ], ['nickname' => 'ASC']);
     }
 
@@ -58,7 +59,7 @@ class WeChatContactRepository extends ServiceEntityRepository
      */
     public function searchByName(WeChatAccount $account, string $name): array
     {
-        return $this->createQueryBuilder('c')
+        $result = $this->createQueryBuilder('c')
             ->where('c.account = :account')
             ->andWhere('c.valid = :valid')
             ->andWhere('c.nickname LIKE :name OR c.remarkName LIKE :name OR c.contactId LIKE :name')
@@ -67,7 +68,12 @@ class WeChatContactRepository extends ServiceEntityRepository
             ->setParameter('name', '%' . $name . '%')
             ->orderBy('c.nickname', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        // 确保返回正确的类型
+        /** @var WeChatContact[] */
+        return is_array($result) ? $result : [];
     }
 
     public function countByAccountAndType(WeChatAccount $account, string $contactType): int
@@ -75,7 +81,25 @@ class WeChatContactRepository extends ServiceEntityRepository
         return $this->count([
             'account' => $account,
             'contactType' => $contactType,
-            'valid' => true
+            'valid' => true,
         ]);
+    }
+
+    public function save(WeChatContact $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(WeChatContact $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

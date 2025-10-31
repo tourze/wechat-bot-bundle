@@ -25,8 +25,9 @@ class DownloadVoiceRequest extends ApiRequest implements WeChatRequestInterface
         private readonly int $msgId,
         private readonly int $length,
         private readonly int $bufId,
-        private readonly string $fromUser
-    ) {}
+        private readonly string $fromUser,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -64,9 +65,20 @@ class DownloadVoiceRequest extends ApiRequest implements WeChatRequestInterface
     /**
      * 获取下载链接
      */
+    /**
+     * @param array<string, mixed> $response
+     */
     public function getDownloadUrl(array $response): ?string
     {
-        return $response['data']['url'] ?? null;
+        if (!isset($response['data']) || !is_array($response['data'])) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $data */
+        $data = $response['data'];
+        $url = $data['url'] ?? null;
+
+        return is_string($url) ? $url : null;
     }
 
     public function __toString(): string

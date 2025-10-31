@@ -7,16 +7,17 @@ namespace Tourze\WechatBotBundle\DTO;
 /**
  * 文件下载结果DTO
  */
-class FileDownloadResult
+readonly class FileDownloadResult
 {
     public function __construct(
-        public readonly string $localPath,
-        public readonly string $originalName,
-        public readonly int $size,
-        public readonly string $mimeType,
-        public readonly string $originalUrl,
-        public readonly int $duration = 0
-    ) {}
+        public string $localPath,
+        public string $originalName,
+        public int $size,
+        public string $mimeType,
+        public string $originalUrl,
+        public int $duration = 0,
+    ) {
+    }
 
     /**
      * 获取文件扩展名
@@ -61,7 +62,7 @@ class FileDownloadResult
 
         while ($size >= 1024 && $unitIndex < count($units) - 1) {
             $size /= 1024;
-            $unitIndex++;
+            ++$unitIndex;
         }
 
         return number_format($size, 2) . ' ' . $units[$unitIndex];

@@ -25,9 +25,11 @@ class SetGroupFilterRequest extends ApiRequest implements WeChatRequestInterface
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
+        /** @var array<string, mixed> */
         private readonly array $groupIds,
-        private readonly string $filterType = 'blacklist'
-    ) {}
+        private readonly string $filterType = 'blacklist',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -39,6 +41,9 @@ class SetGroupFilterRequest extends ApiRequest implements WeChatRequestInterface
         return $this->deviceId;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getGroupIds(): array
     {
         return $this->groupIds;

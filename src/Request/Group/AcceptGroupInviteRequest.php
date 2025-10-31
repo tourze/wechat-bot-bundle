@@ -27,8 +27,9 @@ class AcceptGroupInviteRequest extends ApiRequest implements WeChatRequestInterf
         private readonly string $deviceId,
         private readonly string $groupId,
         private readonly string $inviteId,
-        private readonly bool $accept = true
-    ) {}
+        private readonly bool $accept = true,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

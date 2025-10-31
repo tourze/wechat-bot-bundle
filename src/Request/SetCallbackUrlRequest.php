@@ -17,8 +17,9 @@ class SetCallbackUrlRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
-        private readonly string $callbackUrl
-    ) {}
+        private readonly string $callbackUrl,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

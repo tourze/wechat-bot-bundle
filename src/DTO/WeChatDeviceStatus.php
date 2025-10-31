@@ -11,15 +11,16 @@ namespace Tourze\WechatBotBundle\DTO;
  *
  * @author AI Assistant
  */
-readonly class WeChatDeviceStatus implements \Stringable
+class WeChatDeviceStatus implements \Stringable
 {
     public function __construct(
-        public string $deviceId,
-        public bool $isOnline,
-        public string $status,
-        public ?\DateTimeInterface $lastActiveTime = null,
-        public ?string $error = null
-    ) {}
+        public readonly string $deviceId,
+        public readonly bool $isOnline,
+        public readonly string $status,
+        public readonly ?\DateTimeInterface $lastActiveTime = null,
+        public readonly ?string $error = null,
+    ) {
+    }
 
     public function isOffline(): bool
     {
@@ -28,7 +29,7 @@ readonly class WeChatDeviceStatus implements \Stringable
 
     public function hasError(): bool
     {
-        return $this->error !== null;
+        return null !== $this->error;
     }
 
     public function getStatusText(): string
@@ -38,7 +39,7 @@ readonly class WeChatDeviceStatus implements \Stringable
             'offline' => '离线',
             'pending_login' => '等待登录',
             'expired' => '已过期',
-            default => '未知状态'
+            default => '未知状态',
         };
     }
 

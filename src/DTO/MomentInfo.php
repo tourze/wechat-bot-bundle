@@ -9,6 +9,11 @@ namespace Tourze\WechatBotBundle\DTO;
  */
 class MomentInfo
 {
+    /**
+     * @param string[] $images
+     * @param array<string, mixed> $likes 点赞信息列表
+     * @param array<string, mixed> $comments 评论信息列表
+     */
     public function __construct(
         public readonly string $momentId,
         public readonly string $wxid,
@@ -24,8 +29,9 @@ class MomentInfo
         public readonly int $likeCount,
         public readonly int $commentCount,
         public readonly array $likes,
-        public readonly array $comments
-    ) {}
+        public readonly array $comments,
+    ) {
+    }
 
     /**
      * 获取朋友圈类型描述
@@ -37,7 +43,7 @@ class MomentInfo
             2 => '图片',
             3 => '视频',
             4 => '链接',
-            default => '未知'
+            default => '未知',
         };
     }
 
@@ -46,7 +52,7 @@ class MomentInfo
      */
     public function hasImages(): bool
     {
-        return !empty($this->images);
+        return [] !== $this->images;
     }
 
     /**
@@ -54,7 +60,7 @@ class MomentInfo
      */
     public function hasVideo(): bool
     {
-        return !empty($this->videoUrl);
+        return '' !== $this->videoUrl;
     }
 
     /**
@@ -62,7 +68,7 @@ class MomentInfo
      */
     public function isLink(): bool
     {
-        return $this->type === 4 && !empty($this->linkUrl);
+        return 4 === $this->type && '' !== $this->linkUrl;
     }
 
     /**

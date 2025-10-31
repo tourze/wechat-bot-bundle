@@ -27,8 +27,9 @@ class AddGroupMemberAsFriendRequest extends ApiRequest implements WeChatRequestI
         private readonly string $deviceId,
         private readonly string $groupId,
         private readonly string $memberWxId,
-        private readonly string $message = '我是群友，想加你为好友'
-    ) {}
+        private readonly string $message = '我是群友，想加你为好友',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

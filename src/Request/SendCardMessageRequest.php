@@ -18,8 +18,9 @@ class SendCardMessageRequest extends ApiRequest implements WeChatRequestInterfac
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $wxId,
-        private readonly string $cardWxId
-    ) {}
+        private readonly string $cardWxId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

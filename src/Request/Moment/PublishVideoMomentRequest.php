@@ -28,8 +28,9 @@ class PublishVideoMomentRequest extends ApiRequest implements WeChatRequestInter
         private readonly string $videoPath,
         private readonly string $content = '',
         private readonly string $thumbPath = '',
-        private readonly string $visibility = 'public'
-    ) {}
+        private readonly string $visibility = 'public',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -88,7 +89,7 @@ class PublishVideoMomentRequest extends ApiRequest implements WeChatRequestInter
             ],
         ];
 
-        if ($this->thumbPath !== '') {
+        if ('' !== $this->thumbPath) {
             $multipart[] = [
                 'name' => 'thumb',
                 'contents' => fopen($this->thumbPath, 'r'),

@@ -7,22 +7,26 @@ namespace Tourze\WechatBotBundle\DTO;
 /**
  * 联系人详情结果DTO
  */
-class ContactInfoResult
+readonly class ContactInfoResult
 {
+    /**
+     * @param string[] $tags
+     */
     public function __construct(
-        public readonly string $wxid,
-        public readonly string $nickname,
-        public readonly string $avatar,
-        public readonly string $remark,
-        public readonly int $sex,
-        public readonly string $signature,
-        public readonly string $phone,
-        public readonly string $city,
-        public readonly string $province,
-        public readonly string $country,
-        public readonly array $tags,
-        public readonly bool $isFriend,
-        public readonly string $corpName = '',
-        public readonly string $position = ''
-    ) {}
+        public string $wxid,
+        public string $nickname,
+        public string $avatar,
+        public string $remark,
+        public int $sex,
+        public string $signature,
+        public string $phone,
+        public string $city,
+        public string $province,
+        public string $country,
+        public array $tags,
+        public bool $isFriend,
+        public string $corpName = '',
+        public string $position = '',
+    ) {
+    }
 }

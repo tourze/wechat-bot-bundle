@@ -18,8 +18,6 @@ use Tourze\WechatBotBundle\Repository\WeChatGroupRepository;
     name: 'wechat_group',
     options: ['comment' => '微信群组表']
 )]
-#[ORM\Index(columns: ['account_id'], name: 'wechat_group_idx_account_id')]
-#[ORM\Index(columns: ['group_id'], name: 'wechat_group_idx_group_id')]
 class WeChatGroup implements \Stringable
 {
     use TimestampableAware;
@@ -29,7 +27,7 @@ class WeChatGroup implements \Stringable
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '主键ID'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: WeChatAccount::class)]
+    #[ORM\ManyToOne(targetEntity: WeChatAccount::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private WeChatAccount $account;
 
@@ -93,6 +91,7 @@ class WeChatGroup implements \Stringable
         type: Types::INTEGER,
         options: ['comment' => '群成员数量']
     )]
+    #[Assert\Type(type: 'int')]
     #[Assert\PositiveOrZero]
     private int $memberCount = 0;
 
@@ -101,6 +100,8 @@ class WeChatGroup implements \Stringable
         nullable: true,
         options: ['comment' => '群公告']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $announcement = null;
 
     #[ORM\Column(
@@ -108,6 +109,8 @@ class WeChatGroup implements \Stringable
         nullable: true,
         options: ['comment' => '群描述']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $description = null;
 
     #[ORM\Column(
@@ -125,6 +128,7 @@ class WeChatGroup implements \Stringable
         nullable: true,
         options: ['comment' => '加入群时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $joinTime = null;
 
     #[ORM\Column(
@@ -132,18 +136,21 @@ class WeChatGroup implements \Stringable
         nullable: true,
         options: ['comment' => '最后活跃时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $lastActiveTime = null;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否在群中']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $inGroup = true;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否有效']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
     #[ORM\Column(
@@ -151,6 +158,8 @@ class WeChatGroup implements \Stringable
         nullable: true,
         options: ['comment' => '备注信息']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $remark = null;
 
     public function getId(): ?int
@@ -163,10 +172,9 @@ class WeChatGroup implements \Stringable
         return $this->account;
     }
 
-    public function setAccount(WeChatAccount $account): static
+    public function setAccount(WeChatAccount $account): void
     {
         $this->account = $account;
-        return $this;
     }
 
     public function getGroupId(): string
@@ -174,10 +182,9 @@ class WeChatGroup implements \Stringable
         return $this->groupId;
     }
 
-    public function setGroupId(string $groupId): static
+    public function setGroupId(string $groupId): void
     {
         $this->groupId = $groupId;
-        return $this;
     }
 
     public function getGroupName(): ?string
@@ -185,10 +192,9 @@ class WeChatGroup implements \Stringable
         return $this->groupName;
     }
 
-    public function setGroupName(?string $groupName): static
+    public function setGroupName(?string $groupName): void
     {
         $this->groupName = $groupName;
-        return $this;
     }
 
     public function getRemarkName(): ?string
@@ -196,10 +202,9 @@ class WeChatGroup implements \Stringable
         return $this->remarkName;
     }
 
-    public function setRemarkName(?string $remarkName): static
+    public function setRemarkName(?string $remarkName): void
     {
         $this->remarkName = $remarkName;
-        return $this;
     }
 
     public function getAvatar(): ?string
@@ -207,10 +212,9 @@ class WeChatGroup implements \Stringable
         return $this->avatar;
     }
 
-    public function setAvatar(?string $avatar): static
+    public function setAvatar(?string $avatar): void
     {
         $this->avatar = $avatar;
-        return $this;
     }
 
     public function getOwnerId(): ?string
@@ -218,10 +222,9 @@ class WeChatGroup implements \Stringable
         return $this->ownerId;
     }
 
-    public function setOwnerId(?string $ownerId): static
+    public function setOwnerId(?string $ownerId): void
     {
         $this->ownerId = $ownerId;
-        return $this;
     }
 
     public function getOwnerName(): ?string
@@ -229,10 +232,9 @@ class WeChatGroup implements \Stringable
         return $this->ownerName;
     }
 
-    public function setOwnerName(?string $ownerName): static
+    public function setOwnerName(?string $ownerName): void
     {
         $this->ownerName = $ownerName;
-        return $this;
     }
 
     public function getMemberCount(): int
@@ -240,10 +242,9 @@ class WeChatGroup implements \Stringable
         return $this->memberCount;
     }
 
-    public function setMemberCount(int $memberCount): static
+    public function setMemberCount(int $memberCount): void
     {
         $this->memberCount = $memberCount;
-        return $this;
     }
 
     public function getAnnouncement(): ?string
@@ -251,10 +252,9 @@ class WeChatGroup implements \Stringable
         return $this->announcement;
     }
 
-    public function setAnnouncement(?string $announcement): static
+    public function setAnnouncement(?string $announcement): void
     {
         $this->announcement = $announcement;
-        return $this;
     }
 
     public function getDescription(): ?string
@@ -262,10 +262,9 @@ class WeChatGroup implements \Stringable
         return $this->description;
     }
 
-    public function setDescription(?string $description): static
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
-        return $this;
     }
 
     public function getQrCodeUrl(): ?string
@@ -273,10 +272,9 @@ class WeChatGroup implements \Stringable
         return $this->qrCodeUrl;
     }
 
-    public function setQrCodeUrl(?string $qrCodeUrl): static
+    public function setQrCodeUrl(?string $qrCodeUrl): void
     {
         $this->qrCodeUrl = $qrCodeUrl;
-        return $this;
     }
 
     public function getJoinTime(): ?\DateTimeInterface
@@ -284,10 +282,9 @@ class WeChatGroup implements \Stringable
         return $this->joinTime;
     }
 
-    public function setJoinTime(?\DateTimeInterface $joinTime): static
+    public function setJoinTime(?\DateTimeInterface $joinTime): void
     {
         $this->joinTime = $joinTime;
-        return $this;
     }
 
     public function getLastActiveTime(): ?\DateTimeInterface
@@ -295,10 +292,9 @@ class WeChatGroup implements \Stringable
         return $this->lastActiveTime;
     }
 
-    public function setLastActiveTime(?\DateTimeInterface $lastActiveTime): static
+    public function setLastActiveTime(?\DateTimeInterface $lastActiveTime): void
     {
         $this->lastActiveTime = $lastActiveTime;
-        return $this;
     }
 
     public function isInGroup(): bool
@@ -306,10 +302,9 @@ class WeChatGroup implements \Stringable
         return $this->inGroup;
     }
 
-    public function setInGroup(bool $inGroup): static
+    public function setInGroup(bool $inGroup): void
     {
         $this->inGroup = $inGroup;
-        return $this;
     }
 
     public function isValid(): bool
@@ -317,10 +312,9 @@ class WeChatGroup implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): static
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
     }
 
     public function getRemark(): ?string
@@ -328,10 +322,9 @@ class WeChatGroup implements \Stringable
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): static
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-        return $this;
     }
 
     public function __toString(): string
@@ -350,33 +343,28 @@ class WeChatGroup implements \Stringable
         return $this->remarkName ?? $this->groupName ?? $this->groupId;
     }
 
-    public function updateLastActiveTime(): static
+    public function updateLastActiveTime(): void
     {
-        $this->lastActiveTime = new \DateTime();
-        return $this;
+        $this->lastActiveTime = new \DateTimeImmutable();
     }
 
-    public function leaveGroup(): static
+    public function leaveGroup(): void
     {
         $this->inGroup = false;
-        return $this;
     }
 
-    public function rejoinGroup(): static
+    public function rejoinGroup(): void
     {
         $this->inGroup = true;
-        return $this;
     }
 
-    public function increaseMemberCount(int $count = 1): static
+    public function increaseMemberCount(int $count = 1): void
     {
         $this->memberCount += $count;
-        return $this;
     }
 
-    public function decreaseMemberCount(int $count = 1): static
+    public function decreaseMemberCount(int $count = 1): void
     {
         $this->memberCount = max(0, $this->memberCount - $count);
-        return $this;
     }
 }

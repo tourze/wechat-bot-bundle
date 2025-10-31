@@ -27,8 +27,9 @@ class DownloadVideoRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $deviceId,
         private readonly string $bufId,
         private readonly string $msgId,
-        private readonly string $fromUser
-    ) {}
+        private readonly string $fromUser,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -65,13 +66,14 @@ class DownloadVideoRequest extends ApiRequest implements WeChatRequestInterface
         return [
             'headers' => [
                 'Authorization' => $this->apiAccount->getAccessToken(),
+                'Content-Type' => 'application/x-www-form-urlencoded',
             ],
-            'form_params' => [
+            'body' => http_build_query([
                 'deviceId' => $this->deviceId,
                 'bufId' => $this->bufId,
                 'msgId' => $this->msgId,
                 'fromUser' => $this->fromUser,
-            ],
+            ]),
         ];
     }
 
@@ -79,4 +81,4 @@ class DownloadVideoRequest extends ApiRequest implements WeChatRequestInterface
     {
         return 'POST';
     }
-} 
+}

@@ -25,8 +25,9 @@ class DeleteMomentRequest extends ApiRequest implements WeChatRequestInterface
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly string $momentId
-    ) {}
+        private readonly string $momentId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

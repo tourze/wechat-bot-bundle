@@ -27,8 +27,9 @@ class CommentMomentRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $deviceId,
         private readonly string $momentId,
         private readonly string $content,
-        private readonly ?string $replyToCommentId = null
-    ) {}
+        private readonly ?string $replyToCommentId = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -68,7 +69,7 @@ class CommentMomentRequest extends ApiRequest implements WeChatRequestInterface
             'content' => $this->content,
         ];
 
-        if ($this->replyToCommentId !== null) {
+        if (null !== $this->replyToCommentId) {
             $requestData['replyToCommentId'] = $this->replyToCommentId;
         }
 

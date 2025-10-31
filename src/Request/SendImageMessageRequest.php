@@ -20,8 +20,9 @@ class SendImageMessageRequest extends ApiRequest implements WeChatRequestInterfa
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $wxId,
-        private readonly string $imageUrl
-    ) {}
+        private readonly string $imageUrl,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

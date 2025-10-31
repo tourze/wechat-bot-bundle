@@ -7,12 +7,13 @@ namespace Tourze\WechatBotBundle\DTO;
 /**
  * 文件上传结果DTO
  */
-class FileUploadResult
+readonly class FileUploadResult
 {
     public function __construct(
-        public readonly string $url,
-        public readonly string $fileId,
-        public readonly string $fileName,
-        public readonly int $size
-    ) {}
+        public string $url,
+        public string $fileId,
+        public string $fileName,
+        public int $size,
+    ) {
+    }
 }

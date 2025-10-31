@@ -26,8 +26,9 @@ class ResetPasswordRequest extends ApiRequest implements WeChatRequestInterface
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $oldPassword,
         private readonly string $newPassword,
-        private readonly string $confirmPassword
-    ) {}
+        private readonly string $confirmPassword,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

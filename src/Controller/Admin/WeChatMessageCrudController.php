@@ -29,6 +29,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
+use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
 
 /**
@@ -42,9 +43,11 @@ use Tourze\WechatBotBundle\Entity\WeChatMessage;
  * - 消息统计分析
  *
  * @author AI Assistant
+ *
+ * @extends AbstractCrudController<WeChatMessage>
  */
 #[AdminCrud(routePath: '/wechat-bot/message', routeName: 'wechat_bot_message')]
-class WeChatMessageCrudController extends AbstractCrudController
+final class WeChatMessageCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -64,7 +67,8 @@ class WeChatMessageCrudController extends AbstractCrudController
             ->setDefaultSort(['messageTime' => 'DESC'])
             ->setSearchFields(['content', 'senderId', 'senderName', 'receiverId', 'receiverName', 'groupId', 'groupName'])
             ->setEntityPermission('ROLE_ADMIN')
-            ->setPaginatorPageSize(50);
+            ->setPaginatorPageSize(50)
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -75,13 +79,19 @@ class WeChatMessageCrudController extends AbstractCrudController
         yield AssociationField::new('account', '微信账号')
             ->setRequired(true)
             ->setHelp('选择对应的微信账号')
-            ->formatValue(function ($value) {
-                return $value ? ($value->getNickname() ?? $value->getDeviceId()) : '-';
-            });
+            ->formatValue(function ($value): string {
+                if (!$value instanceof WeChatAccount) {
+                    return '-';
+                }
+
+                return $value->getNickname() ?? $value->getDeviceId() ?? '-';
+            })
+        ;
 
         yield TextField::new('messageId', '消息ID')
             ->setHelp('微信消息的唯一标识')
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         yield ChoiceField::new('messageType', '消息类型')
             ->setChoices([
@@ -95,137 +105,153 @@ class WeChatMessageCrudController extends AbstractCrudController
                 '名片' => 'card',
                 '小程序' => 'mini_program',
                 'XML' => 'xml',
-                '未知' => 'unknown'
+                '未知' => 'unknown',
             ])
             ->setRequired(true)
-            ->formatValue(function ($value) {
-                return $this->formatMessageType($value);
-            });
+            ->formatValue(function ($value): string {
+                return $this->formatMessageType(is_string($value) ? $value : null);
+            })
+        ;
 
         yield ChoiceField::new('direction', '消息方向')
             ->setChoices([
                 '接收' => 'inbound',
-                '发送' => 'outbound'
+                '发送' => 'outbound',
             ])
             ->setRequired(true)
-            ->formatValue(function ($value) {
-                return $this->formatDirection($value);
-            });
+            ->formatValue(function ($value): string {
+                return $this->formatDirection(is_string($value) ? $value : null);
+            })
+        ;
 
         // 发送者信息
         yield TextField::new('senderId', '发送者ID')
             ->setHelp('发送者的微信ID')
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         yield TextField::new('senderName', '发送者昵称')
-            ->setHelp('发送者的昵称');
+            ->setHelp('发送者的昵称')
+        ;
 
         // 接收者信息
         yield TextField::new('receiverId', '接收者ID')
             ->setHelp('接收者的微信ID')
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         yield TextField::new('receiverName', '接收者昵称')
-            ->setHelp('接收者的昵称');
+            ->setHelp('接收者的昵称')
+        ;
 
         // 群组信息
         yield TextField::new('groupId', '群组ID')
             ->setHelp('群消息的群组ID')
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         yield TextField::new('groupName', '群组名称')
-            ->setHelp('群消息的群组名称');
+            ->setHelp('群消息的群组名称')
+        ;
 
         // 消息内容
         yield TextareaField::new('content', '消息内容')
             ->setHelp('文本消息的具体内容')
-            ->formatValue(function ($value) {
-                return $value ? mb_substr($value, 0, 200) . (mb_strlen($value) > 200 ? '...' : '') : '-';
+            ->formatValue(function ($value): string {
+                if (!is_string($value)) {
+                    return '-';
+                }
+
+                return mb_substr($value, 0, 200) . (mb_strlen($value) > 200 ? '...' : '');
             })
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         yield TextField::new('displayContent', '内容预览')
             ->hideOnForm()
             ->hideOnDetail()
-            ->formatValue(function ($value, $entity) {
-                return $entity->getDisplayContent();
-            });
+            ->formatValue(function ($value, $entity): string {
+                return $entity instanceof WeChatMessage
+                    ? $entity->getDisplayContent()
+                    : '-';
+            })
+        ;
 
         // 媒体文件信息
         yield UrlField::new('mediaUrl', '媒体文件URL')
             ->setHelp('图片、视频、语音等媒体文件的URL')
             ->hideOnIndex()
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         yield TextField::new('mediaFileName', '文件名')
             ->setHelp('媒体文件的原始文件名')
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
         yield IntegerField::new('mediaFileSize', '文件大小')
             ->setHelp('媒体文件大小（字节）')
-            ->formatValue(function ($value) {
-                return $value > 0 ? $this->formatFileSize($value) : '-';
+            ->formatValue(function ($value): string {
+                return is_int($value) && $value > 0 ? $this->formatFileSize($value) : '-';
             })
             ->hideOnIndex()
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         // 时间字段
         yield DateTimeField::new('messageTime', '消息时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->setRequired(true)
-            ->setHelp('消息发送或接收的时间');
+            ->setHelp('消息发送或接收的时间')
+        ;
 
         // 状态字段
         yield BooleanField::new('isRead', '已读')
-            ->setHelp('消息是否已读');
+            ->setHelp('消息是否已读')
+        ;
 
         yield BooleanField::new('isReplied', '已回复')
-            ->setHelp('消息是否已回复');
+            ->setHelp('消息是否已回复')
+        ;
 
         yield BooleanField::new('valid', '是否有效')
-            ->setHelp('消息是否有效');
+            ->setHelp('消息是否有效')
+        ;
 
         // 原始数据
         yield TextareaField::new('rawData', '原始数据')
             ->setHelp('消息的原始JSON数据')
             ->hideOnIndex()
-            ->hideOnForm();
+            ->hideOnForm()
+        ;
 
         // 时间戳字段
-        yield DateTimeField::new('createdTime', '创建时间')
+        yield DateTimeField::new('createTime', '创建时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->hideOnForm()
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
 
-        yield DateTimeField::new('updatedTime', '更新时间')
+        yield DateTimeField::new('updateTime', '更新时间')
             ->setFormat('yyyy-MM-dd HH:mm:ss')
             ->hideOnForm()
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
     }
 
     public function configureActions(Actions $actions): Actions
     {
-        // 添加详情操作
-        $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
-
-        // 重新排序操作按钮
-        $actions->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
-
-        // 禁用新建操作（消息通过API创建）
-        $actions->disable(Action::NEW);
-
-        // 自定义操作按钮样式
-        $actions->update(Crud::PAGE_INDEX, Action::DETAIL, function (Action $action) {
-            return $action->setIcon('fa fa-eye')->setLabel('查看');
-        });
-
-        $actions->update(Crud::PAGE_INDEX, Action::EDIT, function (Action $action) {
-            return $action->setIcon('fa fa-edit')->setLabel('编辑');
-        });
-
-        $actions->update(Crud::PAGE_INDEX, Action::DELETE, function (Action $action) {
-            return $action->setIcon('fa fa-trash')->setLabel('删除');
-        });
+        // 消息通过API创建和管理，管理后台设为只读模式
+        $actions
+            // 禁用所有修改操作
+            ->disable(Action::NEW, Action::EDIT, Action::DELETE)
+            // 添加详情查看操作
+            ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            // 自定义详情按钮样式
+            ->update(Crud::PAGE_INDEX, Action::DETAIL, function (Action $action) {
+                return $action->setIcon('fa fa-eye')->setLabel('查看');
+            })
+        ;
 
         return $actions;
     }
@@ -245,11 +271,11 @@ class WeChatMessageCrudController extends AbstractCrudController
                 '名片' => 'card',
                 '小程序' => 'mini_program',
                 'XML' => 'xml',
-                '未知' => 'unknown'
+                '未知' => 'unknown',
             ]))
             ->add(ChoiceFilter::new('direction', '消息方向')->setChoices([
                 '接收' => 'inbound',
-                '发送' => 'outbound'
+                '发送' => 'outbound',
             ]))
             ->add(TextFilter::new('senderId', '发送者ID'))
             ->add(TextFilter::new('senderName', '发送者昵称'))
@@ -261,16 +287,16 @@ class WeChatMessageCrudController extends AbstractCrudController
             ->add(BooleanFilter::new('isReplied', '已回复'))
             ->add(BooleanFilter::new('valid', '是否有效'))
             ->add(DateTimeFilter::new('messageTime', '消息时间'))
-            ->add(DateTimeFilter::new('createdTime', '创建时间'));
+            ->add(DateTimeFilter::new('createTime', '创建时间'))
+        ;
     }
 
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         return parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters)
-            ->select('entity')
             ->leftJoin('entity.account', 'account')
             ->addSelect('account')
-            ->orderBy('entity.messageTime', 'DESC');
+        ;
     }
 
     /**
@@ -289,7 +315,7 @@ class WeChatMessageCrudController extends AbstractCrudController
             'card' => '👤 名片',
             'mini_program' => '📱 小程序',
             'xml' => '📋 XML',
-            default => '❓ 未知'
+            default => '❓ 未知',
         };
     }
 
@@ -301,7 +327,7 @@ class WeChatMessageCrudController extends AbstractCrudController
         return match ($direction) {
             'inbound' => '⬇️ 接收',
             'outbound' => '⬆️ 发送',
-            default => '❓ 未知'
+            default => '❓ 未知',
         };
     }
 
@@ -317,6 +343,6 @@ class WeChatMessageCrudController extends AbstractCrudController
 
         $bytes /= pow(1024, $pow);
 
-        return round($bytes, 2) . ' ' . $units[$pow];
+        return round($bytes, 2) . ' ' . $units[(int) $pow];
     }
 }

@@ -7,11 +7,15 @@ namespace Tourze\WechatBotBundle\DTO;
 /**
  * 群组创建结果DTO
  */
-class GroupCreateResult
+readonly class GroupCreateResult
 {
+    /**
+     * @param string[] $memberWxids
+     */
     public function __construct(
-        public readonly string $groupWxid,
-        public readonly string $groupName,
-        public readonly array $memberWxids
-    ) {}
+        public string $groupWxid,
+        public string $groupName,
+        public array $memberWxids,
+    ) {
+    }
 }

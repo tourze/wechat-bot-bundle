@@ -26,8 +26,9 @@ class SearchContactRequest extends ApiRequest implements WeChatRequestInterface
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $keyword,
-        private readonly string $searchType = 'wechat'
-    ) {}
+        private readonly string $searchType = 'wechat',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

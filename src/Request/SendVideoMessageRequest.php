@@ -21,8 +21,9 @@ class SendVideoMessageRequest extends ApiRequest implements WeChatRequestInterfa
         private readonly string $deviceId,
         private readonly string $wxId,
         private readonly string $videoPath,
-        private readonly string $thumbPath
-    ) {}
+        private readonly string $thumbPath,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

@@ -19,8 +19,9 @@ class SendLinkMessageRequest extends ApiRequest implements WeChatRequestInterfac
         private readonly string $title,
         private readonly string $url,
         private readonly ?string $description = null,
-        private readonly ?string $thumbUrl = null
-    ) {}
+        private readonly ?string $thumbUrl = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -71,11 +72,11 @@ class SendLinkMessageRequest extends ApiRequest implements WeChatRequestInterfac
             'url' => $this->url,
         ];
 
-        if ($this->description !== null) {
+        if (null !== $this->description) {
             $data['description'] = $this->description;
         }
 
-        if ($this->thumbUrl !== null) {
+        if (null !== $this->thumbUrl) {
             $data['thumbUrl'] = $this->thumbUrl;
         }
 

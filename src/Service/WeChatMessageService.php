@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tourze\WechatBotBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Tourze\WechatBotBundle\Client\WeChatApiClient;
 use Tourze\WechatBotBundle\DTO\WeChatMessageData;
 use Tourze\WechatBotBundle\DTO\WeChatMessageSendResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
+use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 use Tourze\WechatBotBundle\Entity\WeChatMessage;
 use Tourze\WechatBotBundle\Exception\MessageException;
 use Tourze\WechatBotBundle\Repository\WeChatAccountRepository;
@@ -31,15 +34,18 @@ use Tourze\WechatBotBundle\Request\SendTextMessageRequest;
  *
  * @author AI Assistant
  */
-class WeChatMessageService
+#[WithMonologChannel(channel: 'wechat_bot')]
+#[Autoconfigure(public: true)]
+readonly class WeChatMessageService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly WeChatApiClient $apiClient,
-        private readonly WeChatMessageRepository $messageRepository,
-        private readonly WeChatAccountRepository $accountRepository,
-        private readonly LoggerInterface $logger
-    ) {}
+        private EntityManagerInterface $entityManager,
+        private WeChatApiClient $apiClient,
+        private WeChatMessageRepository $messageRepository,
+        private WeChatAccountRepository $accountRepository,
+        private LoggerInterface $logger,
+    ) {
+    }
 
     /**
      * 发送文本消息
@@ -47,17 +53,40 @@ class WeChatMessageService
     public function sendTextMessage(
         WeChatAccount $account,
         string $targetWxId,
-        string $content
+        string $content,
     ): WeChatMessageSendResult {
         try {
+            $apiAccount = $account->getApiAccount();
+            $deviceId = $account->getDeviceId();
+
+            if (null === $apiAccount) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: 'API账号不可用'
+                );
+            }
+
+            if (null === $deviceId) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: '设备ID不可用'
+                );
+            }
+
             $request = new SendTextMessageRequest(
-                $account->getApiAccount(),
-                $account->getDeviceId(),
+                $apiAccount,
+                $deviceId,
                 $targetWxId,
                 $content
             );
 
             $response = $this->apiClient->request($request);
+            assert(is_array($response));
+            /** @var array<string, mixed> $response */
 
             // 创建发送记录
             $message = $this->createOutboundMessage(
@@ -71,7 +100,7 @@ class WeChatMessageService
             $this->logger->info('Text message sent successfully', [
                 'accountId' => $account->getId(),
                 'targetWxId' => $targetWxId,
-                'messageId' => $message->getId()
+                'messageId' => $message->getId(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -85,7 +114,7 @@ class WeChatMessageService
                 'accountId' => $account->getId(),
                 'targetWxId' => $targetWxId,
                 'content' => mb_substr($content, 0, 100),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -103,18 +132,40 @@ class WeChatMessageService
     public function sendImageMessage(
         WeChatAccount $account,
         string $targetWxId,
-        string $imageUrl
+        string $imageUrl,
     ): WeChatMessageSendResult {
         try {
+            $apiAccount = $account->getApiAccount();
+            $deviceId = $account->getDeviceId();
+
+            if (null === $apiAccount) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: 'API账号不可用'
+                );
+            }
+
+            if (null === $deviceId) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: '设备ID不可用'
+                );
+            }
+
             $request = new SendImageMessageRequest(
-                $account->getApiAccount(),
-                $account->getDeviceId(),
+                $apiAccount,
+                $deviceId,
                 $targetWxId,
                 $imageUrl
             );
 
             $response = $this->apiClient->request($request);
-
+            assert(is_array($response));
+            /** @var array<string, mixed> $response */
             $message = $this->createOutboundMessage(
                 account: $account,
                 targetWxId: $targetWxId,
@@ -128,7 +179,7 @@ class WeChatMessageService
                 'accountId' => $account->getId(),
                 'targetWxId' => $targetWxId,
                 'imageUrl' => $imageUrl,
-                'messageId' => $message->getId()
+                'messageId' => $message->getId(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -142,7 +193,7 @@ class WeChatMessageService
                 'accountId' => $account->getId(),
                 'targetWxId' => $targetWxId,
                 'imageUrl' => $imageUrl,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -161,19 +212,41 @@ class WeChatMessageService
         WeChatAccount $account,
         string $targetWxId,
         string $fileUrl,
-        ?string $fileName = null
+        ?string $fileName = null,
     ): WeChatMessageSendResult {
         try {
+            $apiAccount = $account->getApiAccount();
+            $deviceId = $account->getDeviceId();
+
+            if (null === $apiAccount) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: 'API账号不可用'
+                );
+            }
+
+            if (null === $deviceId) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: '设备ID不可用'
+                );
+            }
+
             $request = new SendFileMessageRequest(
-                $account->getApiAccount(),
-                $account->getDeviceId(),
+                $apiAccount,
+                $deviceId,
                 $targetWxId,
                 $fileUrl,
                 $fileName
             );
 
             $response = $this->apiClient->request($request);
-
+            assert(is_array($response));
+            /** @var array<string, mixed> $response */
             $message = $this->createOutboundMessage(
                 account: $account,
                 targetWxId: $targetWxId,
@@ -189,7 +262,7 @@ class WeChatMessageService
                 'targetWxId' => $targetWxId,
                 'fileUrl' => $fileUrl,
                 'fileName' => $fileName,
-                'messageId' => $message->getId()
+                'messageId' => $message->getId(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -203,7 +276,7 @@ class WeChatMessageService
                 'accountId' => $account->getId(),
                 'targetWxId' => $targetWxId,
                 'fileUrl' => $fileUrl,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -224,12 +297,33 @@ class WeChatMessageService
         string $title,
         string $description,
         string $url,
-        ?string $thumbUrl = null
+        ?string $thumbUrl = null,
     ): WeChatMessageSendResult {
         try {
+            $apiAccount = $account->getApiAccount();
+            $deviceId = $account->getDeviceId();
+
+            if (null === $apiAccount) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: 'API账号不可用'
+                );
+            }
+
+            if (null === $deviceId) {
+                return new WeChatMessageSendResult(
+                    success: false,
+                    message: null,
+                    apiResponse: null,
+                    errorMessage: '设备ID不可用'
+                );
+            }
+
             $request = new SendLinkMessageRequest(
-                $account->getApiAccount(),
-                $account->getDeviceId(),
+                $apiAccount,
+                $deviceId,
                 $targetWxId,
                 $title,
                 $description,
@@ -238,13 +332,18 @@ class WeChatMessageService
             );
 
             $response = $this->apiClient->request($request);
-
+            assert(is_array($response));
+            /** @var array<string, mixed> $response */
             $linkContent = json_encode([
                 'title' => $title,
                 'description' => $description,
                 'url' => $url,
-                'thumbUrl' => $thumbUrl
+                'thumbUrl' => $thumbUrl,
             ]);
+
+            if (false === $linkContent) {
+                $linkContent = null;
+            }
 
             $message = $this->createOutboundMessage(
                 account: $account,
@@ -259,7 +358,7 @@ class WeChatMessageService
                 'targetWxId' => $targetWxId,
                 'title' => $title,
                 'url' => $url,
-                'messageId' => $message->getId()
+                'messageId' => $message->getId(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -274,7 +373,7 @@ class WeChatMessageService
                 'targetWxId' => $targetWxId,
                 'title' => $title,
                 'url' => $url,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new WeChatMessageSendResult(
@@ -296,28 +395,39 @@ class WeChatMessageService
             $message = $this->messageRepository->findOneBy([
                 'account' => $account,
                 'messageId' => $messageId,
-                'direction' => 'outbound'
+                'direction' => 'outbound',
             ]);
 
-            if ($message === null) {
+            if (null === $message) {
                 throw new MessageException('Message not found or not outbound');
             }
 
+            // $message 已经由 PHPDoc 声明为 WeChatMessage|null，检查 null 后确保类型
+
+            $apiAccount = $account->getApiAccount();
+            $deviceId = $account->getDeviceId();
+            $receiverId = $message->getReceiverId();
+
+            if (null === $apiAccount || null === $deviceId || null === $receiverId) {
+                throw new MessageException('API账号、设备ID或接收者ID不可用');
+            }
+
             $request = new RecallMessageRequest(
-                $account->getApiAccount(),
-                $account->getDeviceId(),
-                $message->getReceiverId(),
+                $apiAccount,
+                $deviceId,
+                $receiverId,
                 $messageId,
                 $messageId, // newMsgId 使用相同值
-                (string)time(),
+                (string) time(),
             );
 
             $response = $this->apiClient->request($request);
-
+            assert(is_array($response));
+            /** @var array<string, mixed> $response */
             $this->logger->info('Message recalled successfully', [
                 'accountId' => $account->getId(),
                 'messageId' => $messageId,
-                'receiverId' => $message->getReceiverId()
+                'receiverId' => $message->getReceiverId(),
             ]);
 
             return true;
@@ -325,7 +435,7 @@ class WeChatMessageService
             $this->logger->error('Failed to recall message', [
                 'accountId' => $account->getId(),
                 'messageId' => $messageId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return false;
@@ -335,6 +445,9 @@ class WeChatMessageService
     /**
      * 处理接收到的消息（用于webhook回调）
      */
+    /**
+     * @param array<string, mixed> $messageData
+     */
     public function processInboundMessage(array $messageData): ?WeChatMessage
     {
         try {
@@ -343,42 +456,45 @@ class WeChatMessageService
 
             // 查找对应的微信账号
             $account = $this->findAccountByDeviceId($parsedData->deviceId);
-            if ($account === null) {
+            if (null === $account) {
                 $this->logger->warning('Account not found for inbound message', [
-                    'deviceId' => $parsedData->deviceId
+                    'deviceId' => $parsedData->deviceId,
                 ]);
+
                 return null;
             }
 
             // 检查消息是否已存在
-            if ($parsedData->messageId !== null && $parsedData->messageId !== '') {
+            if (null !== $parsedData->messageId && '' !== $parsedData->messageId) {
                 $existingMessage = $this->messageRepository->findOneBy([
                     'messageId' => $parsedData->messageId,
-                    'account' => $account
+                    'account' => $account,
                 ]);
 
-                if ((bool) $existingMessage) {
+                if (null !== $existingMessage) {
+                    // $existingMessage 已经由 PHPDoc 声明为 WeChatMessage|null，检查 null 后确保类型
+
                     return $existingMessage;
                 }
             }
 
             // 创建新消息记录
             $message = new WeChatMessage();
-            $message->setAccount($account)
-                ->setMessageId($parsedData->messageId)
-                ->setMessageType($parsedData->messageType)
-                ->setDirection('inbound')
-                ->setSenderId($parsedData->senderId)
-                ->setSenderName($parsedData->senderName)
-                ->setReceiverId($parsedData->receiverId)
-                ->setReceiverName($parsedData->receiverName)
-                ->setGroupId($parsedData->groupId)
-                ->setGroupName($parsedData->groupName)
-                ->setContent($parsedData->content)
-                ->setMediaUrl($parsedData->mediaUrl)
-                ->setMediaFileName($parsedData->mediaFileName)
-                ->setRawData(json_encode($messageData))
-                ->setMessageTime($parsedData->messageTime);
+            $message->setAccount($account);
+            $message->setMessageId($parsedData->messageId);
+            $message->setMessageType($parsedData->messageType);
+            $message->setDirection('inbound');
+            $message->setSenderId($parsedData->senderId);
+            $message->setSenderName($parsedData->senderName);
+            $message->setReceiverId($parsedData->receiverId);
+            $message->setReceiverName($parsedData->receiverName);
+            $message->setGroupId($parsedData->groupId);
+            $message->setGroupName($parsedData->groupName);
+            $message->setContent($parsedData->content);
+            $message->setMediaUrl($parsedData->mediaUrl);
+            $message->setMediaFileName($parsedData->mediaFileName);
+            $message->setRawData(false !== json_encode($messageData) ? json_encode($messageData) : null);
+            $message->setMessageTime($parsedData->messageTime);
 
             $this->entityManager->persist($message);
             $this->entityManager->flush();
@@ -387,14 +503,14 @@ class WeChatMessageService
                 'messageId' => $message->getId(),
                 'accountId' => $account->getId(),
                 'messageType' => $parsedData->messageType,
-                'senderId' => $parsedData->senderId
+                'senderId' => $parsedData->senderId,
             ]);
 
             return $message;
         } catch (\Exception $e) {
             $this->logger->error('Failed to process inbound message', [
                 'messageData' => $messageData,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return null;
@@ -403,6 +519,7 @@ class WeChatMessageService
 
     /**
      * 获取未读消息
+     * @return WeChatMessage[]
      */
     public function getUnreadMessages(WeChatAccount $account): array
     {
@@ -421,6 +538,9 @@ class WeChatMessageService
     /**
      * 批量标记消息为已读
      */
+    /**
+     * @param array<string, mixed> $messages
+     */
     public function markMultipleAsRead(array $messages): void
     {
         foreach ($messages as $message) {
@@ -433,16 +553,18 @@ class WeChatMessageService
 
     /**
      * 获取对话消息（私聊或群聊）
+     * @return WeChatMessage[]
      */
     public function getConversationMessages(
         WeChatAccount $account,
         ?string $contactId = null,
         ?string $groupId = null,
-        int $limit = 50
+        int $limit = 50,
     ): array {
         if ((bool) $groupId) {
             return $this->messageRepository->findGroupMessages($account, $groupId, $limit);
-        } elseif ((bool) $contactId) {
+        }
+        if ((bool) $contactId) {
             return $this->messageRepository->findPrivateMessages($account, $contactId, $limit);
         }
 
@@ -452,6 +574,9 @@ class WeChatMessageService
     /**
      * 获取消息统计
      */
+    /**
+     * @return array<string, mixed>
+     */
     public function getMessageStatistics(WeChatAccount $account): array
     {
         $unreadCount = $this->messageRepository->countUnreadByAccount($account);
@@ -460,12 +585,15 @@ class WeChatMessageService
         return [
             'unread_count' => $unreadCount,
             'type_counts' => $typeCounts,
-            'total_messages' => array_sum($typeCounts)
+            'total_messages' => array_sum($typeCounts),
         ];
     }
 
     /**
      * 创建发送消息记录
+     */
+    /**
+     * @param array<string, mixed> $response
      */
     private function createOutboundMessage(
         WeChatAccount $account,
@@ -474,19 +602,19 @@ class WeChatMessageService
         ?string $content = null,
         ?array $response = null,
         ?string $mediaUrl = null,
-        ?string $mediaFileName = null
+        ?string $mediaFileName = null,
     ): WeChatMessage {
         $message = new WeChatMessage();
-        $message->setAccount($account)
-            ->setMessageType($messageType)
-            ->setDirection('outbound')
-            ->setSenderId($account->getWechatId())
-            ->setSenderName($account->getNickname())
-            ->setReceiverId($targetWxId)
-            ->setContent($content)
-            ->setMediaUrl($mediaUrl)
-            ->setMediaFileName($mediaFileName)
-            ->setRawData($response !== null ? json_encode($response) : null);
+        $message->setAccount($account);
+        $message->setMessageType($messageType);
+        $message->setDirection('outbound');
+        $message->setSenderId($account->getWechatId());
+        $message->setSenderName($account->getNickname());
+        $message->setReceiverId($targetWxId);
+        $message->setContent($content);
+        $message->setMediaUrl($mediaUrl);
+        $message->setMediaFileName($mediaFileName);
+        $message->setRawData(null !== $response ? (false !== json_encode($response) ? json_encode($response) : null) : null);
 
         $this->entityManager->persist($message);
         $this->entityManager->flush();
@@ -497,23 +625,72 @@ class WeChatMessageService
     /**
      * 解析消息数据
      */
+    /**
+     * @param array<string, mixed> $data
+     */
     private function parseMessageData(array $data): WeChatMessageData
     {
         return new WeChatMessageData(
-            deviceId: $data['deviceId'] ?? '',
-            messageId: $data['msgId'] ?? null,
-            messageType: $this->normalizeMessageType($data['type'] ?? 'unknown'),
-            senderId: $data['fromUser'] ?? null,
-            senderName: $data['fromUserName'] ?? null,
-            receiverId: $data['toUser'] ?? null,
-            receiverName: $data['toUserName'] ?? null,
-            groupId: $data['groupId'] ?? null,
-            groupName: $data['groupName'] ?? null,
-            content: $data['content'] ?? null,
-            mediaUrl: $data['mediaUrl'] ?? null,
-            mediaFileName: $data['fileName'] ?? null,
-            messageTime: isset($data['time']) ? new \DateTime('@' . $data['time']) : new \DateTime()
+            deviceId: $this->parseStringValue($data, 'deviceId', ''),
+            messageId: $this->parseOptionalStringValue($data, 'msgId'),
+            messageType: $this->normalizeMessageType($this->parseStringValue($data, 'type', 'unknown')),
+            senderId: $this->parseOptionalStringValue($data, 'fromUser'),
+            senderName: $this->parseOptionalStringValue($data, 'fromUserName'),
+            receiverId: $this->parseOptionalStringValue($data, 'toUser'),
+            receiverName: $this->parseOptionalStringValue($data, 'toUserName'),
+            groupId: $this->parseOptionalStringValue($data, 'groupId'),
+            groupName: $this->parseOptionalStringValue($data, 'groupName'),
+            content: $this->parseOptionalStringValue($data, 'content'),
+            mediaUrl: $this->parseOptionalStringValue($data, 'mediaUrl'),
+            mediaFileName: $this->parseOptionalStringValue($data, 'fileName'),
+            messageTime: $this->parseMessageTime($data)
         );
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function parseStringValue(array $data, string $key, string $default): string
+    {
+        $value = $data[$key] ?? $default;
+
+        return is_string($value) ? $value : $default;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function parseOptionalStringValue(array $data, string $key): ?string
+    {
+        if (!isset($data[$key])) {
+            return null;
+        }
+
+        $value = $data[$key];
+
+        return is_string($value) ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function parseMessageTime(array $data): \DateTimeImmutable
+    {
+        $timeValue = $data['time'] ?? null;
+
+        if (null === $timeValue) {
+            return new \DateTimeImmutable();
+        }
+
+        if (is_numeric($timeValue) || is_string($timeValue)) {
+            try {
+                return new \DateTimeImmutable('@' . (string) $timeValue);
+            } catch (\Exception) {
+                // Use default time if parsing fails
+            }
+        }
+
+        return new \DateTimeImmutable();
     }
 
     /**
@@ -529,7 +706,7 @@ class WeChatMessageService
             '49' => 'link',
             '42' => 'card',
             '47' => 'emoji',
-            default => 'unknown'
+            default => 'unknown',
         };
     }
 
@@ -539,6 +716,8 @@ class WeChatMessageService
     private function findAccountByDeviceId(string $deviceId): ?WeChatAccount
     {
         return $this->accountRepository->findOneBy(['deviceId' => $deviceId]);
+
+        // $account 已经由 PHPDoc 声明为 WeChatAccount|null，检查 null 后确保类型
     }
 
     public function __toString(): string

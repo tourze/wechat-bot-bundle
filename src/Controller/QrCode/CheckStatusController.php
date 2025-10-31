@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tourze\WechatBotBundle\Controller\QrCode;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,14 +17,16 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
 /**
  * 检查微信登录状态控制器
  */
-class CheckStatusController extends AbstractController
+#[WithMonologChannel(channel: 'wechat_bot')]
+final class CheckStatusController extends AbstractController
 {
     public function __construct(
         private readonly WeChatAccountService $accountService,
         private readonly EntityManagerInterface $entityManager,
         private readonly QrCodeStatusService $statusService,
-        private readonly LoggerInterface $logger
-    ) {}
+        private readonly LoggerInterface $logger,
+    ) {
+    }
 
     /**
      * 检查登录状态
@@ -46,17 +49,17 @@ class CheckStatusController extends AbstractController
                 'nickname' => $account->getNickname(),
                 'avatar' => $account->getAvatar(),
                 'lastActiveTime' => $account->getLastActiveTime()?->format('Y-m-d H:i:s'),
-                'message' => $this->statusService->getStatusMessage($account->getStatus())
+                'message' => $this->statusService->getStatusMessage($account->getStatus()),
             ]);
         } catch (\Exception $e) {
             $this->logger->error('Failed to check login status', [
                 'accountId' => $account->getId(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new JsonResponse([
                 'success' => false,
-                'message' => '检查状态失败：' . $e->getMessage()
+                'message' => '检查状态失败：' . $e->getMessage(),
             ], 500);
         }
     }

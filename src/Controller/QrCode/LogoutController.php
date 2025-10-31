@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Controller\QrCode;
 
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,12 +15,14 @@ use Tourze\WechatBotBundle\Service\WeChatAccountService;
 /**
  * 微信退出登录控制器
  */
-class LogoutController extends AbstractController
+#[WithMonologChannel(channel: 'wechat_bot')]
+final class LogoutController extends AbstractController
 {
     public function __construct(
         private readonly WeChatAccountService $accountService,
-        private readonly LoggerInterface $logger
-    ) {}
+        private readonly LoggerInterface $logger,
+    ) {
+    }
 
     /**
      * 退出登录
@@ -30,26 +33,26 @@ class LogoutController extends AbstractController
         try {
             $success = $this->accountService->logout($account);
 
-            if ((bool) $success) {
+            if ($success) {
                 return new JsonResponse([
                     'success' => true,
-                    'message' => '退出登录成功'
+                    'message' => '退出登录成功',
                 ]);
-            } else {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => '退出登录失败'
-                ], 400);
             }
+
+            return new JsonResponse([
+                'success' => false,
+                'message' => '退出登录失败',
+            ], 400);
         } catch (\Exception $e) {
             $this->logger->error('Failed to logout', [
                 'accountId' => $account->getId(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return new JsonResponse([
                 'success' => false,
-                'message' => '退出登录失败：' . $e->getMessage()
+                'message' => '退出登录失败：' . $e->getMessage(),
             ], 500);
         }
     }

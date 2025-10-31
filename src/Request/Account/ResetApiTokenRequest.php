@@ -23,8 +23,9 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 class ResetApiTokenRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
-        private readonly WeChatApiAccount $apiAccount
-    ) {}
+        private readonly WeChatApiAccount $apiAccount,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

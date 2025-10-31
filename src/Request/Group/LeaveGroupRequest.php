@@ -25,8 +25,9 @@ class LeaveGroupRequest extends ApiRequest implements WeChatRequestInterface
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly string $chatRoomId
-    ) {}
+        private readonly string $chatRoomId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -66,4 +67,4 @@ class LeaveGroupRequest extends ApiRequest implements WeChatRequestInterface
     {
         return 'POST';
     }
-} 
+}

@@ -4,14 +4,15 @@ namespace Tourze\WechatBotBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 
 /**
- * @method WeChatAccount|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeChatAccount|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeChatAccount[]    findAll()
- * @method WeChatAccount[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<WeChatAccount>
  */
+#[Autoconfigure(public: true)]
+#[AsRepository(entityClass: WeChatAccount::class)]
 class WeChatAccountRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -21,12 +22,16 @@ class WeChatAccountRepository extends ServiceEntityRepository
 
     public function findByDeviceId(string $deviceId): ?WeChatAccount
     {
-        return $this->findOneBy(['deviceId' => $deviceId]);
+        $account = $this->findOneBy(['deviceId' => $deviceId]);
+
+        return $account instanceof WeChatAccount ? $account : null;
     }
 
     public function findByWechatId(string $wechatId): ?WeChatAccount
     {
-        return $this->findOneBy(['wechatId' => $wechatId]);
+        $account = $this->findOneBy(['wechatId' => $wechatId]);
+
+        return $account instanceof WeChatAccount ? $account : null;
     }
 
     /**
@@ -72,11 +77,20 @@ class WeChatAccountRepository extends ServiceEntityRepository
             ->setParameter('valid', true)
             ->groupBy('a.status')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
 
         $counts = [];
-        foreach ($result as $row) {
-            $counts[$row['status']] = (int) $row['count'];
+        if (is_array($result)) {
+            foreach ($result as $row) {
+                if (is_array($row)
+                    && isset($row['status'], $row['count'])
+                    && is_string($row['status'])
+                    && is_numeric($row['count'])
+                ) {
+                    $counts[$row['status']] = (int) $row['count'];
+                }
+            }
         }
 
         return $counts;
@@ -89,12 +103,19 @@ class WeChatAccountRepository extends ServiceEntityRepository
      */
     public function findActiveAccounts(): array
     {
-        return $this->createQueryBuilder('a')
+        $result = $this->createQueryBuilder('a')
             ->where('a.valid = :valid')
             ->setParameter('valid', true)
-            ->orderBy('a.createdTime', 'DESC')
+            ->orderBy('a.id', 'DESC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        if (!is_array($result)) {
+            return [];
+        }
+
+        return array_filter($result, fn ($item) => $item instanceof WeChatAccount);
     }
 
     /**
@@ -115,5 +136,23 @@ class WeChatAccountRepository extends ServiceEntityRepository
     public function findAllValidAccounts(): array
     {
         return $this->findBy(['valid' => true]);
+    }
+
+    public function save(WeChatAccount $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(WeChatAccount $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

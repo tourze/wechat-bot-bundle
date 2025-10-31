@@ -26,8 +26,9 @@ class UploadMomentImageFileRequest extends ApiRequest implements WeChatRequestIn
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $filePath,
-        private readonly string $fileName = ''
-    ) {}
+        private readonly string $fileName = '',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -68,7 +69,7 @@ class UploadMomentImageFileRequest extends ApiRequest implements WeChatRequestIn
                 [
                     'name' => 'file',
                     'contents' => fopen($this->filePath, 'r'),
-                    'filename' => $this->fileName !== '' ? $this->fileName : basename($this->filePath),
+                    'filename' => '' !== $this->fileName ? $this->fileName : basename($this->filePath),
                 ],
             ],
         ];

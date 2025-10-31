@@ -27,8 +27,9 @@ class AddFriendRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $deviceId,
         private readonly string $wxId,
         private readonly string $message = '',
-        private readonly string $addType = 'search'
-    ) {}
+        private readonly string $addType = 'search',
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

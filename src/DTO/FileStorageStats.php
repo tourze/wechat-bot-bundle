@@ -7,13 +7,17 @@ namespace Tourze\WechatBotBundle\DTO;
 /**
  * 文件存储统计DTO
  */
-class FileStorageStats
+readonly class FileStorageStats
 {
+    /**
+     * @param array<string, mixed> $typeStats
+     */
     public function __construct(
-        public readonly int $totalFiles,
-        public readonly int $totalSize,
-        public readonly array $typeStats
-    ) {}
+        public int $totalFiles,
+        public int $totalSize,
+        public array $typeStats,
+    ) {
+    }
 
     /**
      * 获取格式化的总大小
@@ -26,7 +30,7 @@ class FileStorageStats
 
         while ($size >= 1024 && $unitIndex < count($units) - 1) {
             $size /= 1024;
-            $unitIndex++;
+            ++$unitIndex;
         }
 
         return number_format($size, 2) . ' ' . $units[$unitIndex];

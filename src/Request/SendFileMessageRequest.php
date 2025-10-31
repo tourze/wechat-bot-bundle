@@ -21,8 +21,9 @@ class SendFileMessageRequest extends ApiRequest implements WeChatRequestInterfac
         private readonly string $deviceId,
         private readonly string $wxId,
         private readonly string $filePath,
-        private readonly ?string $fileName = null
-    ) {}
+        private readonly ?string $fileName = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -62,7 +63,7 @@ class SendFileMessageRequest extends ApiRequest implements WeChatRequestInterfac
             'path' => $this->filePath,
         ];
 
-        if ($this->fileName !== null) {
+        if (null !== $this->fileName) {
             $data['fileName'] = $this->fileName;
         }
 

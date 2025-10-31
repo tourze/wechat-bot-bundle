@@ -9,9 +9,13 @@ namespace Tourze\WechatBotBundle\DTO;
  */
 class MomentsResult
 {
+    /**
+     * @param array<int, array<string, mixed>> $moments
+     */
     public function __construct(
         public readonly array $moments,
         public readonly string $nextMaxId,
-        public readonly bool $hasMore
-    ) {}
+        public readonly bool $hasMore,
+    ) {
+    }
 }

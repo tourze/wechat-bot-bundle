@@ -26,8 +26,9 @@ class SendXmlMessageRequest extends ApiRequest implements WeChatRequestInterface
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $wxId,
-        private readonly string $xml
-    ) {}
+        private readonly string $xml,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

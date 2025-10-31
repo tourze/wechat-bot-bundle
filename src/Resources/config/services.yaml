@@ -4,11 +4,26 @@ services:
     autowire: true      # Automatically injects dependencies in your services.
     autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
-  Tourze\WechatBotBundle\Command\:
-    resource: '../../Command/'
-  Tourze\WechatBotBundle\Controller\:
-    resource: '../../Controller/'
+  # API Client 配置 (使用 HttpClientInterface 别名)
+  Tourze\WechatBotBundle\Client\WeChatApiClient:
+    arguments:
+      $httpClient: '@Symfony\Contracts\HttpClient\HttpClientInterface'
+  
+  # 为HttpClientInterface提供默认实现
+  Symfony\Contracts\HttpClient\HttpClientInterface:
+    alias: HttpClientBundle\Service\SmartHttpClient
+
   Tourze\WechatBotBundle\Repository\:
     resource: '../../Repository/'
+
+  Tourze\WechatBotBundle\Command\:
+    resource: '../../Command/'
+
+  Tourze\WechatBotBundle\Controller\:
+    resource: '../../Controller/'
+
   Tourze\WechatBotBundle\Service\:
     resource: '../../Service/'
+
+  Tourze\WechatBotBundle\Handler\:
+    resource: '../../Handler/'

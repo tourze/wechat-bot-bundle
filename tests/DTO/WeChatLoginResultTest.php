@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Tests\DTO;
 
-use PHPUnit\Framework\TestCase;
+use HttpClientBundle\Tests\Request\RequestTestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\WechatBotBundle\DTO\WeChatLoginResult;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 
 /**
  * WeChatLoginResult DTO 单元测试
+ *
+ * @internal
  */
-class WeChatLoginResultTest extends TestCase
+#[CoversClass(WeChatLoginResult::class)]
+final class WeChatLoginResultTest extends RequestTestCase
 {
-    public function test_construct_withValidParameters_setsPropertiesCorrectly(): void
+    public function testConstructWithValidParametersSetsPropertiesCorrectly(): void
     {
         // Arrange
         $account = new WeChatAccount();
@@ -36,7 +40,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertEquals($message, $result->message);
     }
 
-    public function test_construct_withNullAccount_allowsNullAccount(): void
+    public function testConstructWithNullAccountAllowsNullAccount(): void
     {
         // Act
         $result = new WeChatLoginResult(
@@ -53,7 +57,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertEquals('Failed', $result->message);
     }
 
-    public function test_construct_withSuccessfulLogin_returnsSuccessfulResult(): void
+    public function testConstructWithSuccessfulLoginReturnsSuccessfulResult(): void
     {
         // Arrange
         $account = new WeChatAccount();
@@ -75,7 +79,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertEquals('test_device', $result->account->getDeviceId());
     }
 
-    public function test_construct_withFailedLogin_returnsFailedResult(): void
+    public function testConstructWithFailedLoginReturnsFailedResult(): void
     {
         // Act
         $result = new WeChatLoginResult(
@@ -92,7 +96,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertEquals('API error occurred', $result->message);
     }
 
-    public function test_isSuccessful_withTrueSuccess_returnsTrue(): void
+    public function testIsSuccessfulWithTrueSuccessReturnsTrue(): void
     {
         // Arrange
         $result = new WeChatLoginResult(
@@ -106,7 +110,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertTrue($result->success);
     }
 
-    public function test_isSuccessful_withFalseSuccess_returnsFalse(): void
+    public function testIsSuccessfulWithFalseSuccessReturnsFalse(): void
     {
         // Arrange
         $result = new WeChatLoginResult(
@@ -120,7 +124,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertFalse($result->success);
     }
 
-    public function test_toString_withAccount_returnsFormattedString(): void
+    public function testToStringWithAccountReturnsFormattedString(): void
     {
         // Arrange
         $account = new WeChatAccount();
@@ -141,7 +145,7 @@ class WeChatLoginResultTest extends TestCase
         $this->assertStringContainsString('success=true', $stringResult);
     }
 
-    public function test_toString_withNullAccount_returnsFormattedString(): void
+    public function testToStringWithNullAccountReturnsFormattedString(): void
     {
         // Arrange
         $result = new WeChatLoginResult(

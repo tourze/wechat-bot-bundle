@@ -26,8 +26,9 @@ class ForwardFileMessageRequest extends ApiRequest implements WeChatRequestInter
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $wxId,
-        private readonly string $xml
-    ) {}
+        private readonly string $xml,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -73,4 +74,4 @@ class ForwardFileMessageRequest extends ApiRequest implements WeChatRequestInter
     {
         return 'POST';
     }
-} 
+}

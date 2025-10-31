@@ -4,15 +4,16 @@ namespace Tourze\WechatBotBundle\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatGroup;
 
 /**
- * @method WeChatGroup|null find($id, $lockMode = null, $lockVersion = null)
- * @method WeChatGroup|null findOneBy(array $criteria, array $orderBy = null)
- * @method WeChatGroup[]    findAll()
- * @method WeChatGroup[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<WeChatGroup>
  */
+#[Autoconfigure(public: true)]
+#[AsRepository(entityClass: WeChatGroup::class)]
 class WeChatGroupRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -25,7 +26,7 @@ class WeChatGroupRepository extends ServiceEntityRepository
         return $this->findOneBy([
             'account' => $account,
             'groupId' => $groupId,
-            'valid' => true
+            'valid' => true,
         ]);
     }
 
@@ -37,7 +38,7 @@ class WeChatGroupRepository extends ServiceEntityRepository
         return $this->findBy([
             'account' => $account,
             'inGroup' => true,
-            'valid' => true
+            'valid' => true,
         ], ['groupName' => 'ASC']);
     }
 
@@ -48,7 +49,7 @@ class WeChatGroupRepository extends ServiceEntityRepository
     {
         return $this->findBy([
             'account' => $account,
-            'valid' => true
+            'valid' => true,
         ], ['groupName' => 'ASC']);
     }
 
@@ -57,7 +58,7 @@ class WeChatGroupRepository extends ServiceEntityRepository
      */
     public function searchByName(WeChatAccount $account, string $name): array
     {
-        return $this->createQueryBuilder('g')
+        $result = $this->createQueryBuilder('g')
             ->where('g.account = :account')
             ->andWhere('g.valid = :valid')
             ->andWhere('g.groupName LIKE :name OR g.remarkName LIKE :name')
@@ -66,7 +67,12 @@ class WeChatGroupRepository extends ServiceEntityRepository
             ->setParameter('name', '%' . $name . '%')
             ->orderBy('g.groupName', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
+
+        // 确保返回正确的类型
+        /** @var WeChatGroup[] */
+        return is_array($result) ? $result : [];
     }
 
     public function countActiveByAccount(WeChatAccount $account): int
@@ -74,7 +80,25 @@ class WeChatGroupRepository extends ServiceEntityRepository
         return $this->count([
             'account' => $account,
             'inGroup' => true,
-            'valid' => true
+            'valid' => true,
         ]);
+    }
+
+    public function save(WeChatGroup $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(WeChatGroup $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

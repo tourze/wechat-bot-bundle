@@ -16,8 +16,9 @@ use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 class GetOnlineDevicesRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
-        private readonly WeChatApiAccount $apiAccount
-    ) {}
+        private readonly WeChatApiAccount $apiAccount,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

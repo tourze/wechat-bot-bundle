@@ -25,8 +25,10 @@ class SetMessageFilterRequest extends ApiRequest implements WeChatRequestInterfa
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly array $types
-    ) {}
+        /** @var array<string, mixed> */
+        private readonly array $types,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -38,6 +40,9 @@ class SetMessageFilterRequest extends ApiRequest implements WeChatRequestInterfa
         return $this->deviceId;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getTypes(): array
     {
         return $this->types;
@@ -66,4 +71,4 @@ class SetMessageFilterRequest extends ApiRequest implements WeChatRequestInterfa
     {
         return 'POST';
     }
-} 
+}

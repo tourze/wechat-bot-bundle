@@ -13,15 +13,16 @@ use Tourze\WechatBotBundle\Entity\WeChatAccount;
  *
  * @author AI Assistant
  */
-readonly class WeChatLoginResult implements \Stringable
+class WeChatLoginResult implements \Stringable
 {
     public function __construct(
-        public ?WeChatAccount $account,
-        public ?string $qrCodeUrl,
-        public bool $success,
-        public string $message,
-        public ?string $error = null
-    ) {}
+        public readonly ?WeChatAccount $account,
+        public readonly ?string $qrCodeUrl,
+        public readonly bool $success,
+        public readonly string $message,
+        public readonly ?string $error = null,
+    ) {
+    }
 
     public function isSuccess(): bool
     {
@@ -35,12 +36,12 @@ readonly class WeChatLoginResult implements \Stringable
 
     public function hasQrCode(): bool
     {
-        return $this->qrCodeUrl !== null;
+        return null !== $this->qrCodeUrl;
     }
 
     public function hasAccount(): bool
     {
-        return $this->account !== null;
+        return null !== $this->account;
     }
 
     public function __toString(): string

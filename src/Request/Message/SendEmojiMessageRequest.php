@@ -26,8 +26,9 @@ class SendEmojiMessageRequest extends ApiRequest implements WeChatRequestInterfa
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $wxId,
-        private readonly string $emojiMd5
-    ) {}
+        private readonly string $emojiMd5,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

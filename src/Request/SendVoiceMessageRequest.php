@@ -20,8 +20,9 @@ class SendVoiceMessageRequest extends ApiRequest implements WeChatRequestInterfa
         private readonly string $deviceId,
         private readonly string $wxId,
         private readonly string $voiceUrl,
-        private readonly string $length
-    ) {}
+        private readonly string $length,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

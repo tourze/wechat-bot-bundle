@@ -25,8 +25,9 @@ class GetGroupMembersRequest extends ApiRequest implements WeChatRequestInterfac
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly string $groupId
-    ) {}
+        private readonly string $groupId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

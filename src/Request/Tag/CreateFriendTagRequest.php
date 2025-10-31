@@ -25,8 +25,9 @@ class CreateFriendTagRequest extends ApiRequest implements WeChatRequestInterfac
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly string $tagName
-    ) {}
+        private readonly string $tagName,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

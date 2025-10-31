@@ -23,8 +23,9 @@ use Tourze\WechatBotBundle\Request\WeChatRequestInterface;
 class GetAccountBalanceRequest extends ApiRequest implements WeChatRequestInterface
 {
     public function __construct(
-        private readonly WeChatApiAccount $apiAccount
-    ) {}
+        private readonly WeChatApiAccount $apiAccount,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -49,4 +50,4 @@ class GetAccountBalanceRequest extends ApiRequest implements WeChatRequestInterf
     {
         return 'GET';
     }
-} 
+}

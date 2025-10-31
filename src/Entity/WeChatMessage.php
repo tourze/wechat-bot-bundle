@@ -18,13 +18,6 @@ use Tourze\WechatBotBundle\Repository\WeChatMessageRepository;
     name: 'wechat_message',
     options: ['comment' => '微信消息表']
 )]
-#[ORM\Index(columns: ['account_id'], name: 'wechat_message_idx_account_id')]
-#[ORM\Index(columns: ['message_type'], name: 'wechat_message_idx_message_type')]
-#[ORM\Index(columns: ['direction'], name: 'wechat_message_idx_direction')]
-#[ORM\Index(columns: ['sender_id'], name: 'wechat_message_idx_sender_id')]
-#[ORM\Index(columns: ['receiver_id'], name: 'wechat_message_idx_receiver_id')]
-#[ORM\Index(columns: ['group_id'], name: 'wechat_message_idx_group_id')]
-#[ORM\Index(columns: ['message_time'], name: 'wechat_message_idx_message_time')]
 class WeChatMessage implements \Stringable
 {
     use TimestampableAware;
@@ -34,7 +27,7 @@ class WeChatMessage implements \Stringable
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '主键ID'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: WeChatAccount::class)]
+    #[ORM\ManyToOne(targetEntity: WeChatAccount::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private WeChatAccount $account;
 
@@ -64,6 +57,7 @@ class WeChatMessage implements \Stringable
     )]
     #[Assert\NotBlank]
     #[Assert\Choice(choices: ['inbound', 'outbound'])]
+    #[Assert\Length(max: 20)]
     #[IndexColumn]
     private string $direction;
 
@@ -129,6 +123,8 @@ class WeChatMessage implements \Stringable
         nullable: true,
         options: ['comment' => '消息内容（文本消息）']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $content = null;
 
     #[ORM\Column(
@@ -137,7 +133,9 @@ class WeChatMessage implements \Stringable
         nullable: true,
         options: ['comment' => '媒体文件URL（图片、视频、语音、文件等）']
     )]
+    #[Assert\Type(type: 'string')]
     #[Assert\Length(max: 500)]
+    #[Assert\Url]
     private ?string $mediaUrl = null;
 
     #[ORM\Column(
@@ -162,12 +160,15 @@ class WeChatMessage implements \Stringable
         nullable: true,
         options: ['comment' => '消息原始数据（JSON格式）']
     )]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $rawData = null;
 
     #[ORM\Column(
         type: Types::DATETIME_IMMUTABLE,
         options: ['comment' => '消息时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     #[IndexColumn]
     private \DateTimeInterface $messageTime;
 
@@ -175,6 +176,7 @@ class WeChatMessage implements \Stringable
         type: Types::BOOLEAN,
         options: ['comment' => '是否已读']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $isRead = false;
 
     #[ORM\Column(
@@ -182,23 +184,26 @@ class WeChatMessage implements \Stringable
         nullable: true,
         options: ['comment' => '已读时间']
     )]
+    #[Assert\Type(type: \DateTimeInterface::class)]
     private ?\DateTimeInterface $readTime = null;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否已回复']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $isReplied = false;
 
     #[ORM\Column(
         type: Types::BOOLEAN,
         options: ['comment' => '是否有效']
     )]
+    #[Assert\Type(type: 'bool')]
     private bool $valid = true;
 
     public function __construct()
     {
-        $this->messageTime = new \DateTime();
+        $this->messageTime = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -211,10 +216,9 @@ class WeChatMessage implements \Stringable
         return $this->account;
     }
 
-    public function setAccount(WeChatAccount $account): static
+    public function setAccount(WeChatAccount $account): void
     {
         $this->account = $account;
-        return $this;
     }
 
     public function getMessageId(): ?string
@@ -222,10 +226,9 @@ class WeChatMessage implements \Stringable
         return $this->messageId;
     }
 
-    public function setMessageId(?string $messageId): static
+    public function setMessageId(?string $messageId): void
     {
         $this->messageId = $messageId;
-        return $this;
     }
 
     public function getMessageType(): string
@@ -233,10 +236,9 @@ class WeChatMessage implements \Stringable
         return $this->messageType;
     }
 
-    public function setMessageType(string $messageType): static
+    public function setMessageType(string $messageType): void
     {
         $this->messageType = $messageType;
-        return $this;
     }
 
     public function getDirection(): string
@@ -244,10 +246,9 @@ class WeChatMessage implements \Stringable
         return $this->direction;
     }
 
-    public function setDirection(string $direction): static
+    public function setDirection(string $direction): void
     {
         $this->direction = $direction;
-        return $this;
     }
 
     public function getSenderId(): ?string
@@ -255,10 +256,9 @@ class WeChatMessage implements \Stringable
         return $this->senderId;
     }
 
-    public function setSenderId(?string $senderId): static
+    public function setSenderId(?string $senderId): void
     {
         $this->senderId = $senderId;
-        return $this;
     }
 
     public function getSenderName(): ?string
@@ -266,10 +266,9 @@ class WeChatMessage implements \Stringable
         return $this->senderName;
     }
 
-    public function setSenderName(?string $senderName): static
+    public function setSenderName(?string $senderName): void
     {
         $this->senderName = $senderName;
-        return $this;
     }
 
     public function getReceiverId(): ?string
@@ -277,10 +276,9 @@ class WeChatMessage implements \Stringable
         return $this->receiverId;
     }
 
-    public function setReceiverId(?string $receiverId): static
+    public function setReceiverId(?string $receiverId): void
     {
         $this->receiverId = $receiverId;
-        return $this;
     }
 
     public function getReceiverName(): ?string
@@ -288,10 +286,9 @@ class WeChatMessage implements \Stringable
         return $this->receiverName;
     }
 
-    public function setReceiverName(?string $receiverName): static
+    public function setReceiverName(?string $receiverName): void
     {
         $this->receiverName = $receiverName;
-        return $this;
     }
 
     public function getGroupId(): ?string
@@ -299,10 +296,9 @@ class WeChatMessage implements \Stringable
         return $this->groupId;
     }
 
-    public function setGroupId(?string $groupId): static
+    public function setGroupId(?string $groupId): void
     {
         $this->groupId = $groupId;
-        return $this;
     }
 
     public function getGroupName(): ?string
@@ -310,10 +306,9 @@ class WeChatMessage implements \Stringable
         return $this->groupName;
     }
 
-    public function setGroupName(?string $groupName): static
+    public function setGroupName(?string $groupName): void
     {
         $this->groupName = $groupName;
-        return $this;
     }
 
     public function getContent(): ?string
@@ -321,10 +316,9 @@ class WeChatMessage implements \Stringable
         return $this->content;
     }
 
-    public function setContent(?string $content): static
+    public function setContent(?string $content): void
     {
         $this->content = $content;
-        return $this;
     }
 
     public function getMediaUrl(): ?string
@@ -332,10 +326,9 @@ class WeChatMessage implements \Stringable
         return $this->mediaUrl;
     }
 
-    public function setMediaUrl(?string $mediaUrl): static
+    public function setMediaUrl(?string $mediaUrl): void
     {
         $this->mediaUrl = $mediaUrl;
-        return $this;
     }
 
     public function getMediaFileName(): ?string
@@ -343,10 +336,9 @@ class WeChatMessage implements \Stringable
         return $this->mediaFileName;
     }
 
-    public function setMediaFileName(?string $mediaFileName): static
+    public function setMediaFileName(?string $mediaFileName): void
     {
         $this->mediaFileName = $mediaFileName;
-        return $this;
     }
 
     public function getMediaFileSize(): ?int
@@ -354,10 +346,9 @@ class WeChatMessage implements \Stringable
         return $this->mediaFileSize;
     }
 
-    public function setMediaFileSize(?int $mediaFileSize): static
+    public function setMediaFileSize(?int $mediaFileSize): void
     {
         $this->mediaFileSize = $mediaFileSize;
-        return $this;
     }
 
     public function getRawData(): ?string
@@ -365,10 +356,9 @@ class WeChatMessage implements \Stringable
         return $this->rawData;
     }
 
-    public function setRawData(?string $rawData): static
+    public function setRawData(?string $rawData): void
     {
         $this->rawData = $rawData;
-        return $this;
     }
 
     public function getMessageTime(): \DateTimeInterface
@@ -376,10 +366,9 @@ class WeChatMessage implements \Stringable
         return $this->messageTime;
     }
 
-    public function setMessageTime(\DateTimeInterface $messageTime): static
+    public function setMessageTime(\DateTimeInterface $messageTime): void
     {
         $this->messageTime = $messageTime;
-        return $this;
     }
 
     public function isRead(): bool
@@ -387,10 +376,9 @@ class WeChatMessage implements \Stringable
         return $this->isRead;
     }
 
-    public function setIsRead(bool $isRead): static
+    public function setIsRead(bool $isRead): void
     {
         $this->isRead = $isRead;
-        return $this;
     }
 
     public function getReadTime(): ?\DateTimeInterface
@@ -398,10 +386,9 @@ class WeChatMessage implements \Stringable
         return $this->readTime;
     }
 
-    public function setReadTime(?\DateTimeInterface $readTime): static
+    public function setReadTime(?\DateTimeInterface $readTime): void
     {
         $this->readTime = $readTime;
-        return $this;
     }
 
     public function isReplied(): bool
@@ -409,10 +396,9 @@ class WeChatMessage implements \Stringable
         return $this->isReplied;
     }
 
-    public function setIsReplied(bool $isReplied): static
+    public function setIsReplied(bool $isReplied): void
     {
         $this->isReplied = $isReplied;
-        return $this;
     }
 
     public function isValid(): bool
@@ -420,10 +406,9 @@ class WeChatMessage implements \Stringable
         return $this->valid;
     }
 
-    public function setValid(bool $valid): static
+    public function setValid(bool $valid): void
     {
         $this->valid = $valid;
-        return $this;
     }
 
     public function __toString(): string
@@ -442,13 +427,13 @@ class WeChatMessage implements \Stringable
 
     public function getDisplayContent(): string
     {
-        if ($this->isTextMessage() && $this->content !== null && $this->content !== '') {
+        if ($this->isTextMessage() && null !== $this->content && '' !== $this->content) {
             return mb_strlen($this->content) > 50
                 ? mb_substr($this->content, 0, 50) . '...'
                 : $this->content;
         }
 
-        if ($this->isMediaMessage() && $this->mediaFileName !== null && $this->mediaFileName !== '') {
+        if ($this->isMediaMessage() && null !== $this->mediaFileName && '' !== $this->mediaFileName) {
             return "[{$this->messageType}] {$this->mediaFileName}";
         }
 
@@ -457,39 +442,37 @@ class WeChatMessage implements \Stringable
 
     public function isTextMessage(): bool
     {
-        return $this->messageType === 'text';
+        return 'text' === $this->messageType;
     }
 
     public function isMediaMessage(): bool
     {
-        return in_array($this->messageType, ['image', 'voice', 'video', 'file']);
+        return in_array($this->messageType, ['image', 'voice', 'video', 'file'], true);
     }
 
     public function isInbound(): bool
     {
-        return $this->direction === 'inbound';
+        return 'inbound' === $this->direction;
     }
 
     public function isOutbound(): bool
     {
-        return $this->direction === 'outbound';
+        return 'outbound' === $this->direction;
     }
 
     public function isGroupMessage(): bool
     {
-        return !empty($this->groupId);
+        return null !== $this->groupId && '' !== $this->groupId;
     }
 
-    public function markAsRead(): static
+    public function markAsRead(): void
     {
         $this->isRead = true;
-        $this->readTime = new \DateTime();
-        return $this;
+        $this->readTime = new \DateTimeImmutable();
     }
 
-    public function markAsReplied(): static
+    public function markAsReplied(): void
     {
         $this->isReplied = true;
-        return $this;
     }
 }

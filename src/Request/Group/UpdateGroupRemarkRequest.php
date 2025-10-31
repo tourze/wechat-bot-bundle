@@ -26,8 +26,9 @@ class UpdateGroupRemarkRequest extends ApiRequest implements WeChatRequestInterf
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
         private readonly string $groupId,
-        private readonly string $remark
-    ) {}
+        private readonly string $remark,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

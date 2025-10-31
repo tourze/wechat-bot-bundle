@@ -25,8 +25,10 @@ class DeleteGroupFilterRequest extends ApiRequest implements WeChatRequestInterf
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly array $groupIds
-    ) {}
+        /** @var array<string, mixed> */
+        private readonly array $groupIds,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -38,6 +40,9 @@ class DeleteGroupFilterRequest extends ApiRequest implements WeChatRequestInterf
         return $this->deviceId;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getGroupIds(): array
     {
         return $this->groupIds;

@@ -25,8 +25,9 @@ class DeleteFriendTagRequest extends ApiRequest implements WeChatRequestInterfac
     public function __construct(
         private readonly WeChatApiAccount $apiAccount,
         private readonly string $deviceId,
-        private readonly string $tagId
-    ) {}
+        private readonly string $tagId,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {

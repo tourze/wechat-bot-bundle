@@ -21,8 +21,9 @@ class SetDeviceProxyRequest extends ApiRequest implements WeChatRequestInterface
         private readonly string $deviceId,
         private readonly ?string $proxyIp = null,
         private readonly ?string $proxyUser = null,
-        private readonly ?string $proxyPassword = null
-    ) {}
+        private readonly ?string $proxyPassword = null,
+    ) {
+    }
 
     public function getApiAccount(): WeChatApiAccount
     {
@@ -61,15 +62,15 @@ class SetDeviceProxyRequest extends ApiRequest implements WeChatRequestInterface
         ];
 
         // 只有提供了代理IP才添加代理相关参数
-        if ($this->proxyIp !== null) {
+        if (null !== $this->proxyIp) {
             $data['proxyIp'] = $this->proxyIp;
         }
 
-        if ($this->proxyUser !== null) {
+        if (null !== $this->proxyUser) {
             $data['proxyUser'] = $this->proxyUser;
         }
 
-        if ($this->proxyPassword !== null) {
+        if (null !== $this->proxyPassword) {
             $data['proxyPassword'] = $this->proxyPassword;
         }
 
