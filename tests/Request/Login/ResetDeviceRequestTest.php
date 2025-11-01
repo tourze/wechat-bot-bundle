@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Tests\Request\Login;
 
-use HttpClientBundle\Tests\Request\RequestTestCase;
+use HttpClientBundle\Test\RequestTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;
 use Tourze\WechatBotBundle\Request\Login\ResetDeviceRequest;

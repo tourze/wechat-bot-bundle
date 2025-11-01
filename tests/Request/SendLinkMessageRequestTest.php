@@ -6,7 +6,6 @@ namespace Tourze\WechatBotBundle\Tests\Request;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use HttpClientBundle\Tests\Request\RequestTestCase;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 use Tourze\WechatBotBundle\Entity\WeChatAccount;
 use Tourze\WechatBotBundle\Entity\WeChatApiAccount;

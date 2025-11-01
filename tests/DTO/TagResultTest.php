@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tourze\WechatBotBundle\Tests\DTO;
 
-use HttpClientBundle\Tests\Request\RequestTestCase;
+use HttpClientBundle\Test\RequestTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\WechatBotBundle\DTO\TagResult;
 
