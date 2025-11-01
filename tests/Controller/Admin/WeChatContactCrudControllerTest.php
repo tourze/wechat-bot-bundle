@@ -76,19 +76,10 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
     private function makeRequestWithSkipOnError(KernelBrowser $client, string $method, string $uri, array $parameters = []): void
     {
         $client->catchExceptions(true);
-
-        try {
-            $client->request($method, $uri, $parameters);
-            $response = $client->getResponse();
-
-            if (404 === $response->getStatusCode()) {
-                self::markTestSkipped('EasyAdmin路由配置问题，返回404');
-            }
-
-            $this->assertTrue($response->isSuccessful(), 'Response should be successful but got status code: ' . $response->getStatusCode());
-        } catch (\Exception $e) {
-            self::markTestSkipped('EasyAdmin测试环境配置问题: ' . $e->getMessage());
-        }
+        $client->request($method, $uri, $parameters);
+        $response = $client->getResponse();
+        $this->assertNotEquals(404, $response->getStatusCode(), '路由不应返回404');
+        $this->assertTrue($response->isSuccessful(), 'Response should be successful but got status code: ' . $response->getStatusCode());
     }
 
     public function testUnauthorizedAccessToIndex(): void
@@ -310,7 +301,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $this->makeRequestWithSkipOnError($client, 'GET', self::BASE_URL);
             $this->assertSelectorTextContains('h1', '微信联系人');
         } catch (\Exception $e) {
-            self::markTestSkipped('页面结构测试失败: ' . $e->getMessage());
+            $this->fail('页面结构测试失败: ' . $e->getMessage());
         }
     }
 
@@ -335,13 +326,10 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             ]);
 
             $response = $client->getResponse();
-            if (404 === $response->getStatusCode()) {
-                self::markTestSkipped('EasyAdmin自定义动作路由配置问题，返回404');
-            } else {
-                $this->assertTrue($response->isRedirection() || $response->isSuccessful(), 'syncContact动作应该成功或重定向');
-            }
+            // 不再对404进行跳过，直接让断言暴露真实错误
+            $this->assertTrue($response->isRedirection() || $response->isSuccessful(), 'syncContact动作应该成功或重定向');
         } catch (\Exception $e) {
-            self::markTestSkipped('EasyAdmin测试环境配置问题: ' . $e->getMessage());
+            $this->fail('EasyAdmin测试环境配置问题: ' . $e->getMessage());
         }
     }
 
@@ -358,7 +346,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $response = $client->getResponse();
             $this->assertTrue($response->isRedirection() || $response->isSuccessful(), 'sendMessage动作应该成功或重定向');
         } catch (\Exception $e) {
-            self::markTestSkipped('sendMessage动作测试失败: ' . $e->getMessage());
+            $this->fail('sendMessage动作测试失败: ' . $e->getMessage());
         }
     }
 
@@ -375,7 +363,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $response = $client->getResponse();
             $this->assertTrue($response->isRedirection() || $response->isSuccessful(), 'addFriend动作应该成功或重定向');
         } catch (\Exception $e) {
-            self::markTestSkipped('addFriend动作测试失败: ' . $e->getMessage());
+            $this->fail('addFriend动作测试失败: ' . $e->getMessage());
         }
     }
 
@@ -392,7 +380,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $response = $client->getResponse();
             $this->assertTrue($response->isRedirection() || $response->isSuccessful(), 'deleteFriend动作应该成功或重定向');
         } catch (\Exception $e) {
-            self::markTestSkipped('deleteFriend动作测试失败: ' . $e->getMessage());
+            $this->fail('deleteFriend动作测试失败: ' . $e->getMessage());
         }
     }
 
@@ -403,7 +391,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
         try {
             $this->makeRequestWithSkipOnError($client, 'GET', self::BASE_URL);
         } catch (\Exception $e) {
-            self::markTestSkipped('无法访问列表页: ' . $e->getMessage());
+            $this->fail('无法访问列表页: ' . $e->getMessage());
         }
 
         $client->catchExceptions(false);
@@ -419,7 +407,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $this->makeRequestWithSkipOnError($client, 'GET', self::BASE_URL . '/new');
             $this->assertSelectorExists('form');
         } catch (\Exception $e) {
-            self::markTestSkipped('表单测试失败: ' . $e->getMessage());
+            $this->fail('表单测试失败: ' . $e->getMessage());
         }
     }
 
@@ -440,7 +428,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $this->assertSelectorExists('form');
 
             // 如果表单存在，提交空表单以测试验证错误
-            $form = $crawler->filter('form')->form();
+            $form = $crawler->filter('form[name="WeChatContact"]')->form();
 
             // 提交空表单数据，触发必填字段验证错误
             $form->setValues([
@@ -463,7 +451,7 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
             $this->assertStringContainsString('contactId', $content);
             $this->assertStringContainsString('contactType', $content);
         } catch (\Exception $e) {
-            self::markTestSkipped('WeChatContactCrudController包含文件上传字段，测试环境路径问题: ' . $e->getMessage());
+            $this->fail('WeChatContactCrudController包含文件上传字段，测试环境路径问题: ' . $e->getMessage());
         }
     }
 
