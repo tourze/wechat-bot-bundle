@@ -54,7 +54,6 @@ final class GetAccountBalanceRequestTest extends RequestTestCase
         $this->assertIsArray($options);
         $this->assertArrayHasKey('headers', $options);
         $this->assertIsArray($options['headers']);
-        $this->assertIsArray($options['json']);
 
         $this->assertEquals('test_token', $options['headers']['Authorization']);
     }

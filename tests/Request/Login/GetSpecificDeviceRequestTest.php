@@ -52,7 +52,8 @@ final class GetSpecificDeviceRequestTest extends RequestTestCase
         $this->assertIsArray($options);
         $this->assertArrayHasKey('headers', $options);
         $this->assertIsArray($options['headers']);
-        $this->assertIsArray($options['json']);
+        // GET 请求使用 query 参数，并不包含 json 负载
+        $this->assertArrayNotHasKey('json', $options);
 
         $this->assertEquals('test_token', $options['headers']['Authorization']);
     }

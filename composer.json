@@ -22,6 +22,7 @@
     "symfony/dependency-injection": "^7.3",
     "symfony/doctrine-bridge": "^7.3",
     "symfony/event-dispatcher": "^7.3",
+    "symfony/form": "^7.3",
     "symfony/framework-bundle": "^7.3",
     "symfony/http-client": "^7.3",
     "symfony/http-client-contracts": "^3.6",

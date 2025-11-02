@@ -12,6 +12,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Contracts\Field\FieldInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
@@ -25,6 +27,8 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Tourze\WechatBotBundle\Entity\WeChatMoment;
 
 /**
@@ -85,10 +89,10 @@ final class WeChatMomentCrudController extends AbstractCrudController
         yield from $this->configureBasicFields();
         yield from $this->configureAuthorFields();
         yield from $this->configureMomentTypeField();
-        yield from $this->configureContentFields();
+        yield from $this->configureContentFields($pageName);
         yield from $this->configureMetadataFields();
         yield from $this->configureDateTimeFields();
-        yield from $this->configureInteractionFields();
+        yield from $this->configureInteractionFields($pageName);
         yield from $this->configureDataFields();
     }
 
@@ -165,7 +169,7 @@ final class WeChatMomentCrudController extends AbstractCrudController
     /**
      * @return iterable<FieldInterface>
      */
-    private function configureContentFields(): iterable
+    private function configureContentFields(string $pageName): iterable
     {
         yield TextareaField::new('textContent', '文本内容')
             ->setColumns(12)
@@ -174,26 +178,65 @@ final class WeChatMomentCrudController extends AbstractCrudController
             ->formatValue($this->formatTextContent(...))
         ;
 
-        yield TextareaField::new('images', '图片列表')
-            ->setColumns(6)
-            ->hideOnIndex()
-            ->setHelp('图片URL列表的JSON数据')
-            ->formatValue($this->formatImages(...))
-        ;
-
-        yield TextareaField::new('video', '视频信息')
-            ->setColumns(6)
-            ->hideOnIndex()
-            ->setHelp('视频信息的JSON数据')
-            ->formatValue($this->formatVideo(...))
-        ;
-
-        yield TextareaField::new('link', '链接信息')
-            ->setColumns(6)
-            ->hideOnIndex()
-            ->setHelp('链接信息的JSON数据')
-            ->formatValue($this->formatLink(...))
-        ;
+        // 根据页面类型仅产出对应字段，避免非当前页面类型下的字段被错误配置器处理
+        if (Crud::PAGE_NEW === $pageName) {
+            yield TextareaField::new('images', '图片列表')
+                ->setColumns(6)
+                ->setHelp('图片URL列表的JSON数据（表单中以JSON文本编辑）')
+            ;
+            yield TextareaField::new('video', '视频信息')
+                ->setColumns(6)
+                ->setHelp('视频信息的JSON数据（表单中以JSON文本编辑）')
+            ;
+            yield TextareaField::new('link', '链接信息')
+                ->setColumns(6)
+                ->setHelp('链接信息的JSON数据（表单中以JSON文本编辑）')
+            ;
+        } elseif (Crud::PAGE_EDIT === $pageName) {
+            yield CollectionField::new('images', '图片列表')
+                ->setColumns(6)
+                ->setHelp('图片URL列表（逐项编辑）')
+                ->setEntryType(TextType::class)
+                ->allowAdd()
+                ->allowDelete()
+                ->setFormTypeOption('by_reference', false)
+                ->setFormTypeOption('data', [''])
+            ;
+            yield CollectionField::new('video', '视频信息')
+                ->setColumns(6)
+                ->setHelp('视频信息（逐项编辑）')
+                ->setEntryType(TextareaType::class)
+                ->allowAdd()
+                ->allowDelete()
+                ->setFormTypeOption('by_reference', false)
+                ->setFormTypeOption('data', [''])
+            ;
+            yield CollectionField::new('link', '链接信息')
+                ->setColumns(6)
+                ->setHelp('链接信息（逐项编辑）')
+                ->setEntryType(TextareaType::class)
+                ->allowAdd()
+                ->allowDelete()
+                ->setFormTypeOption('by_reference', false)
+                ->setFormTypeOption('data', [''])
+            ;
+        } elseif (Crud::PAGE_DETAIL === $pageName) {
+            yield ArrayField::new('images', '图片列表')
+                ->setColumns(6)
+                ->setHelp('图片URL列表的JSON数据')
+                ->formatValue($this->formatImages(...))
+            ;
+            yield ArrayField::new('video', '视频信息')
+                ->setColumns(6)
+                ->setHelp('视频信息的JSON数据')
+                ->formatValue($this->formatVideo(...))
+            ;
+            yield ArrayField::new('link', '链接信息')
+                ->setColumns(6)
+                ->setHelp('链接信息的JSON数据')
+                ->formatValue($this->formatLink(...))
+            ;
+        }
     }
 
     /**
@@ -307,33 +350,60 @@ final class WeChatMomentCrudController extends AbstractCrudController
     /**
      * @return iterable<FieldInterface>
      */
-    private function configureInteractionFields(): iterable
+    private function configureInteractionFields(string $pageName): iterable
     {
-        yield TextareaField::new('likeUsers', '点赞用户')
-            ->setColumns(6)
-            ->hideOnIndex()
-            ->setHelp('点赞用户列表的JSON数据')
-            ->formatValue(function ($value) {
-                if (is_array($value)) {
-                    return '共 ' . count($value) . ' 个用户点赞';
-                }
+        if (Crud::PAGE_NEW === $pageName) {
+            yield TextareaField::new('likeUsers', '点赞用户')
+                ->setColumns(6)
+                ->setHelp('点赞用户列表的JSON数据（表单中以JSON文本编辑）')
+            ;
+            yield TextareaField::new('comments', '评论列表')
+                ->setColumns(6)
+                ->setHelp('评论列表的JSON数据（表单中以JSON文本编辑）')
+            ;
+        } elseif (Crud::PAGE_EDIT === $pageName) {
+            yield CollectionField::new('likeUsers', '点赞用户')
+                ->setColumns(6)
+                ->setHelp('点赞用户列表（逐项编辑）')
+                ->setEntryType(TextareaType::class)
+                ->allowAdd()
+                ->allowDelete()
+                ->setFormTypeOption('by_reference', false)
+                ->setFormTypeOption('data', [''])
+            ;
+            yield CollectionField::new('comments', '评论列表')
+                ->setColumns(6)
+                ->setHelp('评论列表（逐项编辑）')
+                ->setEntryType(TextareaType::class)
+                ->allowAdd()
+                ->allowDelete()
+                ->setFormTypeOption('by_reference', false)
+                ->setFormTypeOption('data', [''])
+            ;
+        } elseif (Crud::PAGE_DETAIL === $pageName) {
+            yield ArrayField::new('likeUsers', '点赞用户')
+                ->setColumns(6)
+                ->setHelp('点赞用户列表的JSON数据')
+                ->formatValue(function ($value) {
+                    if (is_array($value)) {
+                        return '共 ' . count($value) . ' 个用户点赞';
+                    }
 
-                return $value;
-            })
-        ;
+                    return $value;
+                })
+            ;
+            yield ArrayField::new('comments', '评论列表')
+                ->setColumns(6)
+                ->setHelp('评论列表的JSON数据')
+                ->formatValue(function ($value) {
+                    if (is_array($value)) {
+                        return '共 ' . count($value) . ' 条评论';
+                    }
 
-        yield TextareaField::new('comments', '评论列表')
-            ->setColumns(6)
-            ->hideOnIndex()
-            ->setHelp('评论列表的JSON数据')
-            ->formatValue(function ($value) {
-                if (is_array($value)) {
-                    return '共 ' . count($value) . ' 条评论';
-                }
-
-                return $value;
-            })
-        ;
+                    return $value;
+                })
+            ;
+        }
     }
 
     /**

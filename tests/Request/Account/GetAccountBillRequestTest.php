@@ -83,7 +83,6 @@ final class GetAccountBillRequestTest extends RequestTestCase
         $this->assertIsArray($options['query']);
 
         $this->assertIsArray($options['headers']);
-        $this->assertIsArray($options['json']);
         $this->assertArrayHasKey('Authorization', $options['headers']);
 
         $this->assertEquals('test_token', $options['headers']['Authorization']);

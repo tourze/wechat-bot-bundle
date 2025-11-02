@@ -75,7 +75,8 @@ final class DownloadVideoRequestTest extends RequestTestCase
         $this->assertIsArray($options);
         $this->assertArrayHasKey('headers', $options);
         $this->assertIsArray($options['headers']);
-        $this->assertIsArray($options['json']);
+        // 下载视频请求使用表单 urlencoded 提交，并不包含 json 负载
+        $this->assertArrayNotHasKey('json', $options);
 
         $this->assertEquals('test_token', $options['headers']['Authorization']);
         $this->assertEquals('application/x-www-form-urlencoded', $options['headers']['Content-Type']);

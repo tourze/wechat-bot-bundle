@@ -56,7 +56,8 @@ final class PublishVideoMomentRequestTest extends RequestTestCase
         $this->assertIsArray($options);
         $this->assertArrayHasKey('headers', $options);
         $this->assertIsArray($options['headers']);
-        $this->assertIsArray($options['json']);
+        // 此请求不使用 json 负载
+        $this->assertArrayNotHasKey('json', $options);
 
         $this->assertEquals('test_token', $options['headers']['Authorization']);
     }
