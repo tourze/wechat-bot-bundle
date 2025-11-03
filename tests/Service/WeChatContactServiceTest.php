@@ -121,9 +121,10 @@ final class WeChatContactServiceTest extends AbstractIntegrationTestCase
             ->willThrowException(new \Exception('User not found'))
         ;
 
-        $this->logger
+      $this->logger
             ->expects($this->once())
             ->method('error')
+            ->withAnyParameters()
         ;
 
         // 执行测试
@@ -615,7 +616,8 @@ final class WeChatContactServiceTest extends AbstractIntegrationTestCase
 
         // 将Mock的服务注册到服务容器中
         self::getContainer()->set(WeChatApiClient::class, $this->apiClient);
-        self::getContainer()->set(LoggerInterface::class, $this->logger);
+        // 由于服务使用了WithMonologChannel，需要Mock具体的logger通道
+        self::getContainer()->set('monolog.logger.wechat_bot', $this->logger);
 
         // 从容器中获取服务实例，这样会使用我们注入的Mock服务
         $this->service = self::getService(WeChatContactService::class);

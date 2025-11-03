@@ -66,11 +66,7 @@ final class WeChatTagCrudControllerTest extends AbstractEasyAdminControllerTestC
         yield 'remark' => ['remark'];
     }
 
-    protected function onSetUp(): void
-    {
-        // 控制器测试不需要文件上传目录，移除不必要的文件系统操作
-    }
-
+  
     /**
      * 创建认证客户端并处理异常的辅助方法
      */
