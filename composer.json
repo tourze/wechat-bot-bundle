@@ -41,10 +41,10 @@
     "tourze/doctrine-indexed-bundle": "1.0.*",
     "tourze/doctrine-ip-bundle": "1.1.*",
     "tourze/doctrine-timestamp-bundle": "1.1.*",
-    "tourze/doctrine-track-bundle": "1.0.*",
+    "tourze/doctrine-track-bundle": "1.1.*",
     "tourze/doctrine-user-bundle": "1.0.*",
     "tourze/easy-admin-menu-bundle": "1.0.*",
-    "tourze/http-client-bundle": "1.0.*",
+    "tourze/http-client-bundle": "1.1.*",
     "tourze/symfony-dependency-service-loader": "1.0.*",
     "tourze/symfony-routing-auto-loader-bundle": "1.0.*"
   },
