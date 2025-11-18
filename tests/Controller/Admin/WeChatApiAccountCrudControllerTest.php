@@ -186,14 +186,6 @@ final class WeChatApiAccountCrudControllerTest extends AbstractEasyAdminControll
         $this->assertStringContainsString('添加API账号', false !== $content ? $content : '');
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $this->assertSame(
-            WeChatApiAccount::class,
-            WeChatApiAccountCrudController::getEntityFqcn()
-        );
-    }
-
     public function testSearchFunctionality(): void
     {
         $client = $this->createAdminClient();

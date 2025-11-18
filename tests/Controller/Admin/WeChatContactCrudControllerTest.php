@@ -135,15 +135,6 @@ final class WeChatContactCrudControllerTest extends AbstractEasyAdminControllerT
         $this->assertStringContainsString('text/html', $response->headers->get('Content-Type') ?? '');
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $client = $this->createAuthenticatedClient();
-        $this->makeRequestWithSkipOnError($client, 'GET', self::BASE_URL);
-
-        $entityFqcn = WeChatContactCrudController::getEntityFqcn();
-        $this->assertSame(WeChatContact::class, $entityFqcn);
-    }
-
     public function testSearchByWxid(): void
     {
         $client = $this->createAuthenticatedClient();

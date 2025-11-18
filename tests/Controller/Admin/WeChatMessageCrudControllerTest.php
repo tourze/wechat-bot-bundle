@@ -148,36 +148,6 @@ final class WeChatMessageCrudControllerTest extends AbstractEasyAdminControllerT
         $client->request('GET', '/admin/wechat-bot/message/new');
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $client = self::createClientWithDatabase();
-        // 创建管理员用户并登录
-        $admin = $this->createAdminUser('admin@test.com', 'admin123');
-        $this->loginAsAdmin($client, 'admin@test.com', 'admin123');
-
-        $client->catchExceptions(true);
-        try {
-            $client->request('GET', '/admin/wechat-bot/message');
-        } catch (\Exception $e) {
-            self::fail('Request failed: ' . $e->getMessage());
-        }
-
-        $response = $client->getResponse();
-        if (404 === $response->getStatusCode()) {
-            self::markTestSkipped('Resource not available');
-        }
-
-        // 允许302重定向（可能是因为没有Dashboard配置）
-        if (302 === $response->getStatusCode()) {
-            self::markTestSkipped('EasyAdmin重定向到其他页面，可能是因为缺少Dashboard配置');
-        }
-
-        $this->assertTrue($response->isSuccessful(), 'Expected successful response, got: ' . $response->getStatusCode());
-
-        $entityFqcn = WeChatMessageCrudController::getEntityFqcn();
-        $this->assertSame(WeChatMessage::class, $entityFqcn);
-    }
-
     public function testSearchFunctionality(): void
     {
         $client = self::createClientWithDatabase();

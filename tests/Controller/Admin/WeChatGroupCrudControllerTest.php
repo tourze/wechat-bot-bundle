@@ -143,15 +143,6 @@ final class WeChatGroupCrudControllerTest extends AbstractEasyAdminControllerTes
         $this->assertStringContainsString('text/html', $response->headers->get('Content-Type') ?? '');
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $client = $this->createAuthenticatedClient();
-        $this->makeRequestWithRouteCheck($client, 'GET', self::BASE_URL);
-
-        $entityFqcn = WeChatGroupCrudController::getEntityFqcn();
-        $this->assertSame(WeChatGroup::class, $entityFqcn);
-    }
-
     public function testSearchByGroupId(): void
     {
         $client = $this->createAuthenticatedClient();

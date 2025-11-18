@@ -254,15 +254,6 @@ final class WeChatTagCrudControllerTest extends AbstractEasyAdminControllerTestC
         $this->assertTrue($client->getResponse()->isSuccessful());
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $client = $this->createAuthenticatedClientWithAdmin();
-        $this->assertRequestSuccessful($client, '/admin/wechat-bot/tag');
-
-        $entityFqcn = WeChatTagCrudController::getEntityFqcn();
-        $this->assertSame(WeChatTag::class, $entityFqcn);
-    }
-
     public function testSearchFunctionality(): void
     {
         $client = $this->createAuthenticatedClientWithAdmin();

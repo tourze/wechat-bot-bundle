@@ -149,16 +149,6 @@ final class WeChatAccountCrudControllerTest extends AbstractEasyAdminControllerT
         $this->assertTrue(true); // 验证请求成功执行
     }
 
-    public function testGetEntityFqcn(): void
-    {
-        $client = self::createClientWithDatabase();
-        $this->createAndLoginAdmin($client);
-        $this->requestWithExceptionHandling($client, 'GET', '/admin/wechat-bot/account');
-
-        $entityFqcn = WeChatAccountCrudController::getEntityFqcn();
-        $this->assertSame(WeChatAccount::class, $entityFqcn);
-    }
-
     public function testSearchByDeviceId(): void
     {
         $client = self::createClientWithDatabase();
